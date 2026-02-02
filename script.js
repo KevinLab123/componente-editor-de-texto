@@ -12,21 +12,17 @@ function addLink(){
     const url = prompt("Enter the link URL:");
     if(url){
         document.execCommand("createLink", false, url);
-        updateLinkListeners();
+        updateInteractiveListeners();
     }
 }
 
 const content = document.getElementById('content');
 
-// Función para actualizar listeners en enlaces
-function updateLinkListeners() {
+// Función para actualizar listeners en elementos interactivos (enlaces y botones de plantilla)
+function updateInteractiveListeners() {
+    // --- Enlaces: remover y reasignar listeners ---
     const links = content.querySelectorAll('a');
-    links.forEach(item => {
-        // Remover listeners anteriores para evitar duplicados
-        item.replaceWith(item.cloneNode(true));
-    });
-    
-    // Reasignar listeners
+    links.forEach(item => item.replaceWith(item.cloneNode(true)));
     const linksUpdated = content.querySelectorAll('a');
     linksUpdated.forEach(item => {
         item.addEventListener('mouseenter', function () {
@@ -41,10 +37,27 @@ function updateLinkListeners() {
             window.open(item.href, '_blank');
         });
     });
+
+    // --- Botones de plantilla: no realizan acción por ahora ---
+    const tplButtons = content.querySelectorAll('button.template-btn, button.dynamic-button');
+    tplButtons.forEach(btn => btn.replaceWith(btn.cloneNode(true)));
+    const tplButtonsUpdated = content.querySelectorAll('button.template-btn, button.dynamic-button');
+    tplButtonsUpdated.forEach(btn => {
+        // Evitar que el botón mueva el foco fuera del editor o cambie la selección
+        btn.addEventListener('mousedown', function(e){
+            e.preventDefault();
+        });
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('Template button clicked:', this.textContent);
+            // Intencionalmente sin acción; aquí se podrán agregar métodos en el futuro
+        });
+    });
 }
 
-// Actualizar links cuando haya cambios en el contenido
-content.addEventListener('input', updateLinkListeners);
+// Actualizar elementos interactivos cuando haya cambios en el contenido
+content.addEventListener('input', updateInteractiveListeners);
 
 // Esperar a que el DOM esté completamente cargado
 document.addEventListener('DOMContentLoaded', function() {
@@ -110,7 +123,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 content.style.overflowWrap = '';
                 content.style.backgroundColor = '';
                 
-                updateLinkListeners();
+                updateInteractiveListeners();
             }
         });
     } else {
@@ -135,3 +148,40 @@ function saveAsPDF(value) {
         html2pdf().set(opt).from(content).save();
     }
 }
+
+    function insertButton() {
+        const editor = document.getElementById("content");
+        if(!editor) return;
+        editor.focus();
+        const label = prompt('Texto del botón:', 'Botón');
+        if(label === null) return; // cancelado
+
+        // Crear el botón de plantilla
+        const btn = document.createElement('button');
+        btn.className = 'template-btn';
+        btn.setAttribute('contenteditable', 'false');
+        btn.textContent = label;
+
+        // Insertar en la posición del cursor usando Range
+        const sel = window.getSelection();
+        if(sel && sel.rangeCount > 0){
+            const range = sel.getRangeAt(0);
+            // Insertar el nodo
+            range.deleteContents();
+            range.insertNode(btn);
+            // Añadir un espacio después para poder seguir escribiendo
+            const space = document.createTextNode('\u00A0');
+            btn.after(space);
+            // Mover el caret después del espacio
+            range.setStartAfter(space);
+            range.collapse(true);
+            sel.removeAllRanges();
+            sel.addRange(range);
+        } else {
+            editor.appendChild(btn);
+            editor.appendChild(document.createTextNode('\u00A0'));
+        }
+
+        // Actualizar listeners (enlaces y botones)
+        updateInteractiveListeners();
+    }
