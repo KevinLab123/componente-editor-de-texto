@@ -203,3 +203,52 @@ li{
     text-align: center;
 }
 
+.image-wrapper {
+    display: inline-block;   /* permite que el bloque se alinee */
+    margin: 24px 0;          /* espacio arriba y abajo */
+    border: 1px dashed #ccc;
+    resize: both;
+    overflow: hidden;
+    min-width: 200px;        /* tamaño mínimo */
+    min-height: 150px;
+    max-width: 100%;         /* no exceder el ancho del editor */
+    vertical-align: top;     /* evita saltos raros */
+}
+
+.image-controls-top {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.image-wrapper img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+}
+
+/* Clases de alineación */
+.align-left {
+    margin-left: 0;
+    margin-right: auto;
+    float: left;             /* asegura alineación a la izquierda */
+}
+
+.align-center {
+    margin-left: auto;
+    margin-right: auto;
+    display: block;          /* bloque centrado */
+}
+
+.align-right {
+    margin-left: auto;
+    margin-right: 0;
+    float: right;            /* asegura alineación a la derecha */
+}
+
+
+
+
+
+

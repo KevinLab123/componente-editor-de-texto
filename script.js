@@ -290,6 +290,115 @@ function saveAsPDF(value) {
         editor.appendChild(wrapper);
     }
 }
+function insertImageBase64() {
+    const editor = document.getElementById("content");
+    if (!editor) return;
+
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+
+    input.onchange = function() {
+        const file = input.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const wrapper = document.createElement("div");
+            wrapper.className = "image-wrapper align-center"; // por defecto centrada
+            wrapper.setAttribute("contenteditable", "false");
+
+            const controlsTop = document.createElement("div");
+            controlsTop.className = "image-controls-top";
+
+            const btnLeft = document.createElement("button");
+            btnLeft.textContent = "Izquierda";
+            btnLeft.onclick = () => {
+                wrapper.classList.remove("align-center", "align-right");
+                wrapper.classList.add("align-left");
+                wrapper.style.float = "left";
+            };
+
+            const btnCenter = document.createElement("button");
+            btnCenter.textContent = "Centro";
+            btnCenter.onclick = () => {
+                wrapper.classList.remove("align-left", "align-right");
+                wrapper.classList.add("align-center");
+                wrapper.style.float = "none"; // quitar float
+                wrapper.style.marginLeft = "auto";
+                wrapper.style.marginRight = "auto";
+                wrapper.style.display = "block"; // bloque centrado
+            };
+
+            const btnRight = document.createElement("button");
+            btnRight.textContent = "Derecha";
+            btnRight.onclick = () => {
+                wrapper.classList.remove("align-left", "align-center");
+                wrapper.classList.add("align-right");
+                wrapper.style.float = "right";
+            };
+
+            controlsTop.appendChild(btnLeft);
+            controlsTop.appendChild(btnCenter);
+            controlsTop.appendChild(btnRight);
+
+            const img = document.createElement("img");
+            img.src = e.target.result;
+
+            // Ajustar wrapper al tamaño natural de la imagen
+            img.onload = function() {
+                // Usamos inline-block para que el ancho se adapte
+                wrapper.style.display = "inline-block";
+                wrapper.style.width = img.naturalWidth + "px";
+                wrapper.style.height = "auto";
+                // Evitar que se rompa el alineado
+                if (wrapper.classList.contains("align-center")) {
+                    wrapper.style.marginLeft = "auto";
+                    wrapper.style.marginRight = "auto";
+                    wrapper.style.display = "block";
+                }
+            };
+
+            wrapper.appendChild(controlsTop);
+            wrapper.appendChild(img);
+
+            // Insertar en el editor
+            const sel = window.getSelection();
+            if (sel && sel.rangeCount > 0) {
+                const range = sel.getRangeAt(0);
+                range.deleteContents();
+                range.insertNode(wrapper);
+
+                // Añadir un párrafo vacío después
+                const space = document.createElement("p");
+                space.innerHTML = "<br>";
+                wrapper.after(space);
+
+                range.setStart(space, 0);
+                range.collapse(true);
+                sel.removeAllRanges();
+                sel.addRange(range);
+            } else {
+                editor.appendChild(wrapper);
+                const space = document.createElement("p");
+                space.innerHTML = "<br>";
+                editor.appendChild(space);
+            }
+        };
+
+        reader.readAsDataURL(file);
+    };
+
+    input.click();
+}
+
+
+
+
+
+
+
+
 
 
 

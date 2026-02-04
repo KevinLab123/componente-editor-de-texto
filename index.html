@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +8,7 @@
     <link rel="stylesheet" href="style.css">
     <title>Editor De Texto</title>
 </head>
+
 <body>
     <!-- Contenedor Principal -->
     <div class="container">
@@ -14,13 +16,13 @@
         <div class="toolbar">
             <div class="head">
                 <input id="filename" type="text" placeholder="Nombre Del Archivo" value="Sin nombrar ">
-                                                <!-- Opciones Del ToolBar -->
-                 <!-- Exportado -->
+                <!-- Opciones Del ToolBar -->
+                <!-- Exportado -->
                 <select onchange="saveAsPDF(this.value); this.selectedIndex = 0;">
                     <option value="" selected="" hidden="" disabled="">
                         Archivo
                     </option>
-                    
+
                     <option value="new">
                         Nuevo Documento
                     </option>
@@ -29,11 +31,11 @@
                     </option>
                 </select>
                 <!-- Formato -->
-                 <select onchange="formatDoc('formatBlock', this.value); this.selectedIndex = 0;">
+                <select onchange="formatDoc('formatBlock', this.value); this.selectedIndex = 0;">
                     <option value="" selected="" hidden="" disabled="">
                         Formato
                     </option>
-                    
+
                     <option value="h1">Encabezado 1</option>
                     <option value="h2">Encabezado 2</option>
                     <option value="h3">Encabezado 3</option>
@@ -55,19 +57,19 @@
                     <option value="5">Largo</option>
                     <option value="6">Extra Largo</option>
                     <option value="7">Grande</option>
-                    
+
                 </select>
                 <!-- Color y fondo -->
                 <div>
                     <span>Color</span>
                     <input oninput="formatDoc('foreColor',this.value); this.value='#000000';" type="color">
                 </div>
-                
-                  <div>
+
+                <div>
                     <span>Fondo</span>
                     <input oninput="formatDoc('hiliteColor',this.value); this.value='#000000';" type="color">
                 </div>
-                
+
 
             </div>
             <div class="btn-toolbar">
@@ -82,22 +84,30 @@
                 <button><i onclick="formatDoc('justifyRight')" class='bx bx-align-right'></i></button>
                 <button><i onclick="formatDoc('justifyFull')" class='bx bx-align-justify'></i></button>
                 <button><i onclick="formatDoc('insertOrderedList')" class='bx bxs-spreadsheet'></i></button>
-                <button><i onclick="formatDoc('insertUnorderedList')" class='bx bxs-objects-horizontal-left'></i></button>
+                <button><i onclick="formatDoc('insertUnorderedList')"
+                        class='bx bxs-objects-horizontal-left'></i></button>
                 <button><i onclick="addLink()" class='bx bxs-plus-square'></i></button>
                 <button><i onclick="formatDoc('unlink')" class='bx bxs-minus-square'></i></button>
+                <button onclick="insertImageBase64()">
+                    <i class='bx bx-image'></i>
+                </button>
+
                 <button onclick="insertTable()"> <i class='bx bx-table'></i> </button>
                 <button onclick="insertButton()"> <i class='bx bxs-joystick-button'></i></button>
                 <button class="show-code" data-active="false">&lt;/&gt;</button>
             </div>
         </div>
+        
         <!-- Toolbar -->
-         <div id="content" contenteditable="true" spellcheck="false">
+        <div id="content" contenteditable="true" spellcheck="false">
             Lorem Ipsum
-         </div>
+        </div>
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="script.js"></script>
 </body>
+
 </html>
 </body>
+
 </html>
