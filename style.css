@@ -133,3 +133,73 @@ li{
     font-size: 0.9em;
     cursor: default;
 }
+
+.editor-table {
+    margin: 16px auto;   /* espacio arriba y abajo, centrado horizontal */
+    border-collapse: collapse;
+    width: auto;         /* que se ajuste al contenido */
+}
+
+.editor-table td, .editor-table th {
+    border: 1px solid #ccc;
+    padding: 8px;
+    text-align: center;
+}
+
+.table-control {
+    background: #f0f0f0;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 0.8em;
+    cursor: pointer;
+    padding: 4px 8px;
+    margin: 4px;
+}
+
+.table-control:hover {
+    background: #e0e0e0;
+}
+
+.table-control.delete {
+    background: #ffdddd;
+    border: 1px solid #cc0000;
+    color: #a00;
+}
+
+.table-control.delete:hover {
+    background: #ffcccc;
+}
+
+.table-wrapper {
+    display: flex;
+    flex-direction: column;   /* controles arriba, tabla en medio */
+    align-items: center;      /* todo centrado */
+    margin: 24px 0;           /* espacio arriba y abajo */
+    position: relative;
+}
+
+.table-controls-top {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.table-controls-side {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    margin-left: 8px;
+}
+
+.editor-table {
+    border-collapse: collapse;
+    margin: 0 auto;
+}
+
+.editor-table td {
+    border: 1px solid #ccc;
+    padding: 8px;
+    min-width: 60px;
+    text-align: center;
+}
+

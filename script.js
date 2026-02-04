@@ -185,3 +185,111 @@ function saveAsPDF(value) {
         // Actualizar listeners (enlaces y botones)
         updateInteractiveListeners();
     }
+
+ function insertTable() {
+    const editor = document.getElementById("content");
+    if (!editor) return;
+    editor.focus();
+
+    // Fijar siempre 2 filas y 2 columnas
+    const rows = 2;
+    const cols = 2;
+
+    // Contenedor principal
+    const wrapper = document.createElement("div");
+    wrapper.className = "table-wrapper";
+
+    // Controles superiores
+    const controlsTop = document.createElement("div");
+    controlsTop.className = "table-controls-top";
+
+    const addColBtn = document.createElement("button");
+    addColBtn.textContent = "+ Columna";
+    addColBtn.className = "table-control";
+
+    const deleteBtn = document.createElement("button");
+    deleteBtn.textContent = "Eliminar tabla";
+    deleteBtn.className = "table-control delete";
+
+    controlsTop.appendChild(addColBtn);
+    controlsTop.appendChild(deleteBtn);
+
+    // Contenedor horizontal: tabla + controles laterales
+    const rowContainer = document.createElement("div");
+    rowContainer.style.display = "flex";
+    rowContainer.style.alignItems = "center";
+
+    const table = document.createElement("table");
+    table.className = "editor-table";
+
+    // Crear tabla 2x2
+    for (let r = 0; r < rows; r++) {
+        const tr = document.createElement("tr");
+        for (let c = 0; c < cols; c++) {
+            const td = document.createElement("td");
+            td.textContent = "Celda";
+            td.contentEditable = "true"; // editable
+            tr.appendChild(td);
+        }
+        table.appendChild(tr);
+    }
+
+    const controlsSide = document.createElement("div");
+    controlsSide.className = "table-controls-side";
+
+    const addRowBtn = document.createElement("button");
+    addRowBtn.textContent = "+ Fila";
+    addRowBtn.className = "table-control";
+
+    controlsSide.appendChild(addRowBtn);
+
+    // Eventos dinámicos
+    addColBtn.addEventListener("click", () => {
+        table.querySelectorAll("tr").forEach(tr => {
+            const td = document.createElement("td");
+            td.textContent = "Celda";
+            td.contentEditable = "true";
+            tr.appendChild(td);
+        });
+    });
+
+    addRowBtn.addEventListener("click", () => {
+        const tr = document.createElement("tr");
+        const colCount = table.rows[0].cells.length;
+        for (let c = 0; c < colCount; c++) {
+            const td = document.createElement("td");
+            td.textContent = "Celda";
+            td.contentEditable = "true";
+            tr.appendChild(td);
+        }
+        table.appendChild(tr);
+    });
+
+    deleteBtn.addEventListener("click", () => {
+        wrapper.remove();
+    });
+
+    // Ensamblar
+    rowContainer.appendChild(table);
+    rowContainer.appendChild(controlsSide);
+
+    wrapper.appendChild(controlsTop);
+    wrapper.appendChild(rowContainer);
+
+    // Insertar en el editor
+    const sel = window.getSelection();
+    if (sel && sel.rangeCount > 0) {
+        const range = sel.getRangeAt(0);
+        range.deleteContents();
+        range.insertNode(wrapper);
+        range.setStartAfter(wrapper);
+        range.collapse(true);
+        sel.removeAllRanges();
+        sel.addRange(range);
+    } else {
+        editor.appendChild(wrapper);
+    }
+}
+
+
+
