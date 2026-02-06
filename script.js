@@ -306,6 +306,33 @@ function saveAsPDF(value) {
         updateInteractiveListeners();
     }
 
+function toggleList(type) {
+    const sel = window.getSelection();
+    if (!sel.rangeCount) return;
+    const range = sel.getRangeAt(0);
+    const parent = range.commonAncestorContainer.nodeType === 3 
+        ? range.commonAncestorContainer.parentElement : range.commonAncestorContainer;
+
+    const list = parent.closest('ul, ol');
+
+    if (list) {
+        // Revertir: Extraer contenido de los li y eliminar la lista
+        const fragment = document.createDocumentFragment();
+        Array.from(list.querySelectorAll('li')).forEach(li => {
+            while (li.firstChild) fragment.appendChild(li.firstChild);
+        });
+        list.replaceWith(fragment); 
+    } else {
+        // Aplicar: Crear nueva estructura de lista
+        const newList = document.createElement(type);
+        const li = document.createElement('li');
+        li.appendChild(range.extractContents());
+        newList.appendChild(li);
+        range.insertNode(newList);
+    }
+    sel.removeAllRanges();
+}
+
  function insertTable() {
     const editor = document.getElementById("content");
     if (!editor) return;
