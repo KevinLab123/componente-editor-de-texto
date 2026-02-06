@@ -31,7 +31,7 @@
                     </option>
                 </select>
                 <!-- Formato -->
-                <select onchange="formatDoc('formatBlock', this.value); this.selectedIndex = 0;">
+                <select onchange="setBlockFormat(this.value); this.selectedIndex = 0;">
                     <option value="" selected="" hidden="" disabled="">
                         Formato
                     </option>
@@ -45,19 +45,15 @@
                     <option value="p">Parrafo</option>
                 </select>
                 <!-- Tamaño de fuente -->
-                <select onchange="formatDoc('fontSize', this.value); this.selectedIndex = 0;">
-                    <option value="" selected="" hidden="" disabled="">
-                        Tamaño De Fuente
-                    </option>
-
-                    <option value="1">Extra Pequeño</option>
-                    <option value="2">Pequeño</option>
-                    <option value="3">Regular</option>
-                    <option value="4">Medio</option>
-                    <option value="5">Largo</option>
-                    <option value="6">Extra Largo</option>
-                    <option value="7">Grande</option>
-
+                <select onchange="setFontSize(this.value); this.selectedIndex = 0;">
+                    <option value="" selected hidden disabled>Tamaño De Fuente</option>
+                    <option value="12px">Muy Pequeño</option>
+                    <option value="14px">Pequeño</option>
+                    <option value="16px">Regular</option>
+                    <option value="20px">Medio</option>
+                    <option value="24px">Largo</option>
+                    <option value="32px">Extra Largo</option>
+                    <option value="48px">Grande</option>
                 </select>
                 <!-- Color y fondo -->
                 <div>
@@ -84,8 +80,7 @@
                 <button><i onclick="alignText('right')" class='bx bx-align-right'></i></button>
                 <button><i onclick="alignText('justify')" class='bx bx-align-justify'></i></button>
                 <button><i onclick="toggleList('ul')" class='bx bxs-spreadsheet'></i></button>
-                <button><i onclick="toggleList('ol')"
-                        class='bx bxs-objects-horizontal-left'></i></button>
+                <button><i onclick="toggleList('ol')" class='bx bxs-objects-horizontal-left'></i></button>
                 <button><i onclick="addLink()" class='bx bxs-plus-square'></i></button>
                 <button><i onclick="formatDoc('unlink')" class='bx bxs-minus-square'></i></button>
                 <button onclick="insertImageBase64()">
@@ -97,7 +92,7 @@
                 <button class="show-code" data-active="false">&lt;/&gt;</button>
             </div>
         </div>
-        
+
         <!-- Toolbar -->
         <div id="content" contenteditable="true" spellcheck="false">
             Lorem Ipsum

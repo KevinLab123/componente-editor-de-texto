@@ -333,6 +333,52 @@ function toggleList(type) {
     sel.removeAllRanges();
 }
 
+function setFontSize(size) {
+    const sel = window.getSelection();
+    if (!sel.rangeCount || sel.isCollapsed) return;
+
+    const range = sel.getRangeAt(0);
+    const span = document.createElement('span');
+    
+    // Aplicamos el tamaño (ej: '16px', '20px', '1.2em')
+    span.style.fontSize = size; 
+
+    try {
+        // Extraemos el contenido seleccionado y lo insertamos en el span
+        span.appendChild(range.extractContents());
+        range.insertNode(span);
+    } catch (e) {
+        console.error("Error al cambiar el tamaño de fuente:", e);
+    }
+
+    sel.removeAllRanges();
+}
+
+function setBlockFormat(tagName) {
+    const sel = window.getSelection();
+    if (!sel.rangeCount) return;
+
+    const range = sel.getRangeAt(0);
+    // Buscamos el ancestro común que sea un bloque (H1-H6 o P)
+    let parentBlock = range.commonAncestorContainer;
+    if (parentBlock.nodeType === 3) parentBlock = parentBlock.parentNode;
+    
+    const blockTags = ['H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'P'];
+    const closestBlock = parentBlock.closest(blockTags.join(','));
+
+    if (closestBlock) {
+        const newBlock = document.createElement(tagName);
+        newBlock.innerHTML = closestBlock.innerHTML;
+        closestBlock.replaceWith(newBlock);
+    } else {
+        const content = range.extractContents();
+        const newBlock = document.createElement(tagName);
+        newBlock.appendChild(content);
+        range.insertNode(newBlock);
+    }
+    sel.removeAllRanges();
+}
+
  function insertTable() {
     const editor = document.getElementById("content");
     if (!editor) return;
