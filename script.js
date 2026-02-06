@@ -8,6 +8,126 @@ function formatDoc(cmd, value=null) {
     }
 }
 
+function bold() {
+    const sel = window.getSelection();
+    if (!sel.rangeCount) return;
+    const range = sel.getRangeAt(0);
+    const parent = range.commonAncestorContainer.parentElement;
+
+    if (parent.closest('strong')) {
+        // Lógica para remover: extrae y reemplaza al ancestro fuerte
+        const strong = parent.closest('strong');
+        strong.replaceWith(...strong.childNodes);
+    } else {
+        // Lógica para aplicar: usa extractContents para manejar fragmentos complejos
+        const strong = document.createElement('strong');
+        strong.appendChild(range.extractContents());
+        range.insertNode(strong);
+    }
+    sel.removeAllRanges();
+}
+
+function underline() {
+    const sel = window.getSelection();
+    if (!sel.rangeCount) return;
+
+    const range = sel.getRangeAt(0);
+    // Buscamos el elemento 'u' más cercano en la jerarquía
+    const parent = range.commonAncestorContainer.nodeType === 3 
+        ? range.commonAncestorContainer.parentElement 
+        : range.commonAncestorContainer;
+
+    const underlineElement = parent.closest('u');
+
+    if (underlineElement) {
+        // Lógica para remover: Reemplaza la etiqueta 'u' con su contenido interno
+        underlineElement.replaceWith(...underlineElement.childNodes);
+    } else {
+        // Lógica para aplicar: Envuelve la selección en una nueva etiqueta 'u'
+        const u = document.createElement('u');
+        u.appendChild(range.extractContents());
+        range.insertNode(u);
+    }
+
+    sel.removeAllRanges(); // Limpiar selección tras la operación
+}
+
+function italic() {
+    const sel = window.getSelection();
+    if (!sel.rangeCount) return;
+
+    const range = sel.getRangeAt(0);
+    
+    // Identificar el contenedor padre, manejando nodos de texto (tipo 3)
+    const parent = range.commonAncestorContainer.nodeType === 3 
+        ? range.commonAncestorContainer.parentElement 
+        : range.commonAncestorContainer;
+
+    // Buscar el ancestro 'em' más cercano
+    const italicElement = parent.closest('em');
+
+    if (italicElement) {
+        // Lógica para remover: Desenvolver el contenido
+        italicElement.replaceWith(...italicElement.childNodes);
+    } else {
+        // Lógica para aplicar: Envolver la selección
+        const em = document.createElement('em');
+        try {
+            em.appendChild(range.extractContents());
+            range.insertNode(em);
+        } catch (e) {
+            console.error("Error al aplicar cursiva:", e);
+        }
+    }
+
+    sel.removeAllRanges();
+}
+
+function strikethrough() {
+    const sel = window.getSelection();
+    if (!sel.rangeCount) return;
+
+    const range = sel.getRangeAt(0);
+    // Buscamos el elemento padre real (manejando nodos de texto)
+    const parent = range.commonAncestorContainer.nodeType === 3 
+        ? range.commonAncestorContainer.parentElement 
+        : range.commonAncestorContainer;
+
+    // Buscamos si ya existe una etiqueta de tachado 's'
+    const sElement = parent.closest('s');
+
+    if (sElement) {
+        // Lógica para remover: extrae los hijos y elimina la etiqueta <s>
+        sElement.replaceWith(...sElement.childNodes);
+    } else {
+        // Lógica para aplicar: envuelve la selección en un nuevo nodo <s>
+        const s = document.createElement('s');
+        try {
+            s.appendChild(range.extractContents());
+            range.insertNode(s);
+        } catch (e) {
+            console.error("Error al aplicar tachado:", e);
+        }
+    }
+
+    // Limpiar selección para reflejar cambios
+    sel.removeAllRanges();
+}
+
+function alignText(mode) {
+    const sel = window.getSelection();
+    if (!sel.rangeCount) return;
+
+    let container = sel.getRangeAt(0).commonAncestorContainer;
+    // Aseguramos que trabajamos con un elemento y no un nodo de texto
+    if (container.nodeType === 3) container = container.parentElement;
+
+    // Aplicamos el estilo directamente al contenedor
+    container.style.textAlign = mode; 
+     // Limpiar selección para reflejar cambios
+    sel.removeAllRanges();
+}
+
 function addLink(){
     const url = prompt("Enter the link URL:");
     if(url){
