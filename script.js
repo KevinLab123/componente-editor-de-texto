@@ -15,13 +15,24 @@ function bold() {
     const parent = range.commonAncestorContainer.parentElement;
 
     if (parent.closest('strong')) {
-        // Lógica para remover: extrae y reemplaza al ancestro fuerte
         const strong = parent.closest('strong');
         strong.replaceWith(...strong.childNodes);
     } else {
-        // Lógica para aplicar: usa extractContents para manejar fragmentos complejos
+        const fragment = range.extractContents();
+        
+        // 1. Eliminar etiquetas <strong> internas para evitar duplicados
+        const nestedStrong = fragment.querySelectorAll('strong');
+        nestedStrong.forEach(el => el.replaceWith(...el.childNodes));
+
+        // 2. Limpiar estilos inline que apliquen negrita
+        const styledElements = fragment.querySelectorAll('[style*="font-weight"]');
+        styledElements.forEach(el => {
+            el.style.fontWeight = '';
+            if (el.getAttribute('style') === '') el.removeAttribute('style');
+        });
+
         const strong = document.createElement('strong');
-        strong.appendChild(range.extractContents());
+        strong.appendChild(fragment);
         range.insertNode(strong);
     }
     sel.removeAllRanges();
@@ -32,7 +43,6 @@ function underline() {
     if (!sel.rangeCount) return;
 
     const range = sel.getRangeAt(0);
-    // Buscamos el elemento 'u' más cercano en la jerarquía
     const parent = range.commonAncestorContainer.nodeType === 3 
         ? range.commonAncestorContainer.parentElement 
         : range.commonAncestorContainer;
@@ -40,16 +50,27 @@ function underline() {
     const underlineElement = parent.closest('u');
 
     if (underlineElement) {
-        // Lógica para remover: Reemplaza la etiqueta 'u' con su contenido interno
         underlineElement.replaceWith(...underlineElement.childNodes);
     } else {
-        // Lógica para aplicar: Envuelve la selección en una nueva etiqueta 'u'
+        const fragment = range.extractContents();
+
+        // 1. Eliminar etiquetas <u> internas para evitar duplicados
+        const nestedUnderline = fragment.querySelectorAll('u');
+        nestedUnderline.forEach(el => el.replaceWith(...el.childNodes));
+
+        // 2. Limpiar estilos inline de text-decoration: underline
+        const styledElements = fragment.querySelectorAll('[style*="text-decoration"]');
+        styledElements.forEach(el => {
+            el.style.textDecoration = '';
+            if (el.getAttribute('style') === '') el.removeAttribute('style');
+        });
+
         const u = document.createElement('u');
-        u.appendChild(range.extractContents());
+        u.appendChild(fragment);
         range.insertNode(u);
     }
 
-    sel.removeAllRanges(); // Limpiar selección tras la operación
+    sel.removeAllRanges();
 }
 
 function italic() {
@@ -57,29 +78,32 @@ function italic() {
     if (!sel.rangeCount) return;
 
     const range = sel.getRangeAt(0);
-    
-    // Identificar el contenedor padre, manejando nodos de texto (tipo 3)
     const parent = range.commonAncestorContainer.nodeType === 3 
         ? range.commonAncestorContainer.parentElement 
         : range.commonAncestorContainer;
 
-    // Buscar el ancestro 'em' más cercano
-    const italicElement = parent.closest('em');
+    const italicElement = parent.closest('em, i'); // Buscamos em o i
 
     if (italicElement) {
-        // Lógica para remover: Desenvolver el contenido
         italicElement.replaceWith(...italicElement.childNodes);
     } else {
-        // Lógica para aplicar: Envolver la selección
-        const em = document.createElement('em');
-        try {
-            em.appendChild(range.extractContents());
-            range.insertNode(em);
-        } catch (e) {
-            console.error("Error al aplicar cursiva:", e);
-        }
-    }
+        const fragment = range.extractContents();
 
+        // 1. Eliminar etiquetas de itálica internas (em e i)
+        const nestedItalics = fragment.querySelectorAll('em, i');
+        nestedItalics.forEach(el => el.replaceWith(...el.childNodes));
+
+        // 2. Limpiar estilos inline de font-style: italic
+        const styledElements = fragment.querySelectorAll('[style*="font-style"]');
+        styledElements.forEach(el => {
+            el.style.fontStyle = '';
+            if (el.getAttribute('style') === '') el.removeAttribute('style');
+        });
+
+        const em = document.createElement('em');
+        em.appendChild(fragment);
+        range.insertNode(em);
+    }
     sel.removeAllRanges();
 }
 
@@ -88,29 +112,33 @@ function strikethrough() {
     if (!sel.rangeCount) return;
 
     const range = sel.getRangeAt(0);
-    // Buscamos el elemento padre real (manejando nodos de texto)
     const parent = range.commonAncestorContainer.nodeType === 3 
         ? range.commonAncestorContainer.parentElement 
         : range.commonAncestorContainer;
 
-    // Buscamos si ya existe una etiqueta de tachado 's'
-    const sElement = parent.closest('s');
-
+    const sElement = parent.closest('s, strike, del');
     if (sElement) {
-        // Lógica para remover: extrae los hijos y elimina la etiqueta <s>
-        sElement.replaceWith(...sElement.childNodes);
+        sElement.replaceWith(...sElement.childNodes); 
     } else {
-        // Lógica para aplicar: envuelve la selección en un nuevo nodo <s>
-        const s = document.createElement('s');
-        try {
-            s.appendChild(range.extractContents());
-            range.insertNode(s);
-        } catch (e) {
-            console.error("Error al aplicar tachado:", e);
-        }
-    }
+        const fragment = range.extractContents();
 
-    // Limpiar selección para reflejar cambios
+        // 1. Eliminar etiquetas de tachado internas para evitar duplicados
+        const nestedS = fragment.querySelectorAll('s, strike, del');
+        nestedS.forEach(el => el.replaceWith(...el.childNodes));
+
+        // 2. Limpiar estilos inline de line-through
+        const styledElements = fragment.querySelectorAll('[style*="text-decoration"]');
+        styledElements.forEach(el => {
+            if (el.style.textDecoration.includes('line-through')) {
+                el.style.textDecoration = el.style.textDecoration.replace('line-through', '').trim();
+            }
+            if (el.getAttribute('style') === '') el.removeAttribute('style');
+        });
+
+        const s = document.createElement('s');
+        s.appendChild(fragment);
+        range.insertNode(s);
+    }
     sel.removeAllRanges();
 }
 
@@ -118,13 +146,25 @@ function alignText(mode) {
     const sel = window.getSelection();
     if (!sel.rangeCount) return;
 
-    let container = sel.getRangeAt(0).commonAncestorContainer;
-    // Aseguramos que trabajamos con un elemento y no un nodo de texto
-    if (container.nodeType === 3) container = container.parentElement;
+    let range = sel.getRangeAt(0);
+    let node = range.commonAncestorContainer;
 
-    // Aplicamos el estilo directamente al contenedor
-    container.style.textAlign = mode; 
-     // Limpiar selección para reflejar cambios
+    // 1. Identificar el ancestro de bloque más cercano (P, H1-H6, DIV)
+    if (node.nodeType === 3) node = node.parentElement;
+    const blockElement = node.closest('p, h1, h2, h3, h4, h5, h6, div, li');
+
+    if (blockElement) {
+        // 2. Limpiar alineaciones previas en elementos hijos para evitar conflictos
+        const nestedAlignments = blockElement.querySelectorAll('[style*="text-align"]');
+        nestedAlignments.forEach(el => {
+            el.style.textAlign = '';
+            if (el.getAttribute('style') === '') el.removeAttribute('style');
+        });
+
+        // 3. Aplicar la alineación al bloque raíz
+        blockElement.style.textAlign = mode; 
+    }
+    
     sel.removeAllRanges();
 }
 
