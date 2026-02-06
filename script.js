@@ -168,6 +168,19 @@ function alignText(mode) {
     sel.removeAllRanges();
 }
 
+function setFontFamily(font) {
+  const editor = document.getElementById('content');
+    if (!editor) return;
+
+    editor.style.fontFamily = font; // Cubre texto base y párrafos
+
+    const allDescendants = editor.querySelectorAll('*');
+    allDescendants.forEach(el => {
+        el.style.fontFamily = 'inherit'; // Fuerza a listas y tablas a seguir al padre
+        if (el.getAttribute('style') === '') el.removeAttribute('style');
+    });
+}
+
 function addLink(){
     const url = prompt("Enter the link URL:");
     if(url){
@@ -395,25 +408,26 @@ function setFontSize(size) {
 }
 
 function setBlockFormat(tagName) {
+    const editor = document.getElementById('content');
     const sel = window.getSelection();
-    if (!sel.rangeCount) return;
+    if (!sel.rangeCount || !editor) return;
 
     const range = sel.getRangeAt(0);
-    // Buscamos el ancestro común que sea un bloque (H1-H6 o P)
     let parentBlock = range.commonAncestorContainer;
     if (parentBlock.nodeType === 3) parentBlock = parentBlock.parentNode;
-    
+
     const blockTags = ['H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'P'];
     const closestBlock = parentBlock.closest(blockTags.join(','));
 
+    const newBlock = document.createElement(tagName);
+    // Sincronizar con la fuente global del editor
+    newBlock.style.fontFamily = editor.style.fontFamily;
+
     if (closestBlock) {
-        const newBlock = document.createElement(tagName);
         newBlock.innerHTML = closestBlock.innerHTML;
         closestBlock.replaceWith(newBlock);
     } else {
-        const content = range.extractContents();
-        const newBlock = document.createElement(tagName);
-        newBlock.appendChild(content);
+        newBlock.appendChild(range.extractContents());
         range.insertNode(newBlock);
     }
     sel.removeAllRanges();

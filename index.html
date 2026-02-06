@@ -44,6 +44,25 @@
                     <option value="h6">Encabezado 6</option>
                     <option value="p">Parrafo</option>
                 </select>
+                <!-- Selector de fuente -->
+                <select onchange="setFontFamily(this.value); this.selectedIndex = 0;">
+                    <option value="" selected hidden disabled>Fuente</option>
+                    <optgroup label="Modernas">
+                        <option value="Arial, sans-serif">Arial</option>
+                        <option value="'Helvetica Neue', Helvetica, sans-serif">Helvetica</option>
+                        <option value="'Open Sans', sans-serif">Open Sans</option>
+                        <option value="Verdana, Geneva, sans-serif">Verdana</option>
+                    </optgroup>
+                    <optgroup label="Tradicionales">)">
+                        <option value="'Times New Roman', Times, serif">Times New Roman</option>
+                        <option value="Georgia, serif">Georgia</option>
+                        <option value="'Palatino Linotype', serif">Palatino</option>
+                    </optgroup>
+                    <optgroup label="Técnicas">
+                        <option value="'Courier New', Courier, monospace">Courier New</option>
+                    </optgroup>
+                </select>
+
                 <!-- Tamaño de fuente -->
                 <select onchange="setFontSize(this.value); this.selectedIndex = 0;">
                     <option value="" selected hidden disabled>Tamaño De Fuente</option>
