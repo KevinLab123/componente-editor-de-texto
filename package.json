@@ -1,0 +1,26 @@
+{
+  "name": "componente-editor-de-texto",
+  "version": "1.0.0",
+  "description": "API para contenido creado por el editor de texto ",
+  "main": "api.js",
+  "type": "module",
+  "scripts": {
+    "dev": "nodemon api.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KevinLab123/componente-editor-de-texto.git"
+  },
+  "author": "Kevin Herrera Trejos",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/KevinLab123/componente-editor-de-texto/issues"
+  },
+  "homepage": "https://github.com/KevinLab123/componente-editor-de-texto#readme",
+  "dependencies": {
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.11"
+  }
+}
