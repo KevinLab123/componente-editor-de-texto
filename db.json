@@ -1,7 +1,1 @@
-{
-   "content":[
-    {"id":1,"text":"Hola, este es un texto de ejemplo."},
-    {"id":2,"text":"Puedes editar este texto como quieras."},
-    {"id":3,"text":"¡Diviértete creando contenido!"}
-   ] 
-}
+{"content":[{"id":1,"text":"Contenido actualizado 3."},{"id":2,"text":"Puedes editar este texto como quieras."},{"id":3,"text":"¡Diviértete creando contenido!"},{"id":4,"text":"This is the body of the new content."},{"id":5,"text":"This is the body of the new content."},{"id":6,"text":"This is the body of the new content."}]}

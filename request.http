@@ -1,0 +1,23 @@
+GET http://localhost:3000/content HTTP/1.1
+
+###
+GET http://localhost:3000/content/1 HTTP/1.1
+
+###
+POST http://localhost:3000/content HTTP/1.1
+Content-Type: application/json
+
+{
+  "text": "This is the body of the new content."
+}
+
+###
+PUT http://localhost:3000/content/1 HTTP/1.1
+Content-Type: application/json
+
+{
+  "text": "Contenido actualizado 3."
+}
+
+###
+DELETE http://localhost:3000/content/7 HTTP/1.1
