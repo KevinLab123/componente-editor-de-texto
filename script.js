@@ -640,6 +640,33 @@ function insertImageBase64() {
 }
 
 
+async function saveContent() {
+    const editorContent = document.getElementById('content').innerHTML;
+    const url = 'http://localhost:3000/documents';
+
+    try {
+        // 1. Obtener documentos para calcular ID
+        const res = await fetch(url);
+        const data = await res.json();
+        
+        // 2. Calcular Max ID + 1
+        const nextId = data.length > 0 
+            ? Math.max(...data.map(d => d.id)) + 1 
+            : 1;
+
+        // 3. Guardar nuevo registro
+        await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: nextId, content: editorContent })
+        });
+
+        alert('Documento guardado con ID: ' + nextId);
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
 
 
 

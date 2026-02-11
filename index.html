@@ -29,6 +29,9 @@
                     <option value="pdf">
                         Guardar cómo PDF
                     </option>
+                    <option value="save">
+                        Guardar plantilla
+                    </option>
                 </select>
                 <!-- Formato -->
                 <select onchange="setBlockFormat(this.value); this.selectedIndex = 0;">
@@ -88,6 +91,7 @@
 
             </div>
             <div class="btn-toolbar">
+                <button onclick="saveContent()"><i class='bx bx-save'></i></button>
                 <button onclick="formatDoc('undo')"><i class='bx bx-undo'></i></button>
                 <button onclick="formatDoc('redo')"><i class='bx bx-redo'></i></button>
                 <button onclick="bold()"><i class='bx bx-bold'></i></button>

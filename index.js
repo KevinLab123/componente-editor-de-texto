@@ -1,6 +1,8 @@
 const express = require('express');
 
 const app = express();
+const cors = require('cors');
+app.use(cors());
 
 //middlewares funciones ejecutadas antes de llegar a las rutas
 app.use(express.json());//para que el servidor pueda entender los datos en formato json
