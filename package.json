@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "description": "API para contenido creado por el editor de texto ",
   "main": "api.js",
-  "type": "module",
+
   "scripts": {
-    "dev": "nodemon api.js"
+    "dev": "nodemon index.js"
   },
   "repository": {
     "type": "git",
@@ -22,7 +22,8 @@
     "dotenv": "^17.2.4",
     "express": "^5.2.1",
     "morgan": "^1.10.1",
-    "mssql": "^12.2.0"
+    "mssql": "^12.2.0",
+    "pg": "^8.18.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.11"
