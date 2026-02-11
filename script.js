@@ -537,6 +537,7 @@ function setBlockFormat(tagName) {
         editor.appendChild(wrapper);
     }
 }
+
 function insertImageBase64() {
     const editor = document.getElementById("content");
     if (!editor) return;
@@ -563,7 +564,6 @@ function insertImageBase64() {
             btnLeft.onclick = () => {
                 wrapper.classList.remove("align-center", "align-right");
                 wrapper.classList.add("align-left");
-                wrapper.style.float = "left";
             };
 
             const btnCenter = document.createElement("button");
@@ -571,10 +571,6 @@ function insertImageBase64() {
             btnCenter.onclick = () => {
                 wrapper.classList.remove("align-left", "align-right");
                 wrapper.classList.add("align-center");
-                wrapper.style.float = "none"; // quitar float
-                wrapper.style.marginLeft = "auto";
-                wrapper.style.marginRight = "auto";
-                wrapper.style.display = "block"; // bloque centrado
             };
 
             const btnRight = document.createElement("button");
@@ -582,41 +578,80 @@ function insertImageBase64() {
             btnRight.onclick = () => {
                 wrapper.classList.remove("align-left", "align-center");
                 wrapper.classList.add("align-right");
-                wrapper.style.float = "right";
             };
 
             controlsTop.appendChild(btnLeft);
             controlsTop.appendChild(btnCenter);
             controlsTop.appendChild(btnRight);
 
+            // Contenedor exclusivo para la imagen
+            const imgContainer = document.createElement("div");
+            imgContainer.className = "img-container";
+
             const img = document.createElement("img");
             img.src = e.target.result;
+            imgContainer.appendChild(img);
 
-            // Ajustar wrapper al tamaño natural de la imagen
             img.onload = function() {
-                // Usamos inline-block para que el ancho se adapte
-                wrapper.style.display = "inline-block";
-                wrapper.style.width = img.naturalWidth + "px";
-                wrapper.style.height = "auto";
-                // Evitar que se rompa el alineado
-                if (wrapper.classList.contains("align-center")) {
-                    wrapper.style.marginLeft = "auto";
-                    wrapper.style.marginRight = "auto";
-                    wrapper.style.display = "block";
-                }
+                img.style.width = img.naturalWidth + "px";
+                img.style.height = "auto";
+
+                // Crear los 4 handles
+                const positions = ["top-left", "top-right", "bottom-left", "bottom-right"];
+                positions.forEach(pos => {
+                    const handle = document.createElement("div");
+                    handle.className = "resize-handle " + pos;
+                    imgContainer.appendChild(handle);
+
+                    let isResizing = false;
+
+                    handle.addEventListener("mousedown", (e) => {
+                        e.preventDefault();
+                        isResizing = true;
+                        document.addEventListener("mousemove", resize);
+                        document.addEventListener("mouseup", stopResize);
+                    });
+
+                    function resize(e) {
+                        if (!isResizing) return;
+                        const rect = imgContainer.getBoundingClientRect();
+                        let newWidth;
+
+                        if (pos.includes("right")) {
+                            newWidth = e.clientX - rect.left;
+                        } else {
+                            newWidth = rect.right - e.clientX;
+                        }
+
+                        const maxWidth = 600, minWidth = 100;
+                        newWidth = Math.max(minWidth, Math.min(newWidth, maxWidth));
+
+                        const aspectRatio = img.naturalWidth / img.naturalHeight;
+                        const newHeight = newWidth / aspectRatio;
+
+                        img.style.width = newWidth + "px";
+                        img.style.height = newHeight + "px";
+                        imgContainer.style.width = img.style.width;
+                        imgContainer.style.height = img.style.height;
+                    }
+
+                    function stopResize() {
+                        isResizing = false;
+                        document.removeEventListener("mousemove", resize);
+                        document.removeEventListener("mouseup", stopResize);
+                    }
+                });
             };
 
             wrapper.appendChild(controlsTop);
-            wrapper.appendChild(img);
+            wrapper.appendChild(imgContainer);
 
-            // Insertar en el editor
             const sel = window.getSelection();
             if (sel && sel.rangeCount > 0) {
                 const range = sel.getRangeAt(0);
                 range.deleteContents();
                 range.insertNode(wrapper);
 
-                // Añadir un párrafo vacío después
                 const space = document.createElement("p");
                 space.innerHTML = "<br>";
                 wrapper.after(space);
@@ -638,6 +673,10 @@ function insertImageBase64() {
 
     input.click();
 }
+
+
+
+
 
 
 async function saveContent() {
