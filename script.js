@@ -190,6 +190,34 @@ function addLink(){
 }
 
 const content = document.getElementById('content');
+let history = [];
+let currentIndex = -1;
+
+function saveState(){
+    // Si estamos en medio del historial y escribimos algo nuevo,eliminamos los estados futuros
+    if (currentIndex < history.length - 1) { history = history.slice(0, currentIndex + 1); }
+    // Guardamos el nuevo estado 
+    history.push(content.innerHTML);
+    // Ajustamos el índice al último estado
+    currentIndex = history.length - 1;
+}
+
+function undo(){
+    if(currentIndex > 0){
+        currentIndex--;
+        content.innerHTML = history[currentIndex];
+    }
+}
+
+function redo(){
+    if(currentIndex < history.length - 1){
+        currentIndex++;
+        content.innerHTML = history[currentIndex];
+    }
+}
+//Detectar cambios en el editor y inicializar con el contenido inicial
+content.addEventListener("input", saveState);
+saveState();
 
 // Función para actualizar listeners en elementos interactivos (enlaces y botones de plantilla)
 function updateInteractiveListeners() {
@@ -660,11 +688,13 @@ function insertImageBase64() {
                 range.collapse(true);
                 sel.removeAllRanges();
                 sel.addRange(range);
+                saveState();
             } else {
                 editor.appendChild(wrapper);
                 const space = document.createElement("p");
                 space.innerHTML = "<br>";
                 editor.appendChild(space);
+                saveState();
             }
         };
 
@@ -673,11 +703,6 @@ function insertImageBase64() {
 
     input.click();
 }
-
-
-
-
-
 
 async function saveContent() {
     const editorContent = document.getElementById('content').innerHTML;
