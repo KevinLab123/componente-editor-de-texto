@@ -193,11 +193,27 @@ const content = document.getElementById('content');
 let history = [];
 let currentIndex = -1;
 
-function saveState(){
-    // Si estamos en medio del historial y escribimos algo nuevo,eliminamos los estados futuros
-    if (currentIndex < history.length - 1) { history = history.slice(0, currentIndex + 1); }
-    // Guardamos el nuevo estado 
-    history.push(content.innerHTML);
+function saveState() {
+    // Clonamos el innerHTML actual
+    let rawHTML = content.innerHTML;
+    // Usamos DOMParser para manipular el HTML como documento
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(rawHTML, "text/html");
+    // Eliminamos todas las imágenes
+    doc.querySelectorAll("img").forEach(el => el.remove());
+    // Eliminamos todos los botones
+    doc.querySelectorAll("button").forEach(el => el.remove());
+    // También puedes eliminar wrappers específicos si lo deseas
+    doc.querySelectorAll(".image-wrapper, .image-controls-top, .img-container, .resize-handle")
+       .forEach(el => el.remove());
+    // Obtenemos el HTML limpio
+    let sanitizedHTML = doc.body.innerHTML;
+    // Si estamos en medio del historial y escribimos algo nuevo, eliminamos los estados futuros
+    if (currentIndex < history.length - 1) {
+        history = history.slice(0, currentIndex + 1);
+    }
+    // Guardamos el nuevo estado ya limpio
+    history.push(sanitizedHTML);
     // Ajustamos el índice al último estado
     currentIndex = history.length - 1;
 }
@@ -607,6 +623,8 @@ function insertImageBase64() {
                 wrapper.classList.remove("align-left", "align-center");
                 wrapper.classList.add("align-right");
             };
+
+            
 
             controlsTop.appendChild(btnLeft);
             controlsTop.appendChild(btnCenter);
