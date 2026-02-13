@@ -6,123 +6,24 @@
     box-sizing: border-box;
     font-family: 'Roboto', sans-serif;
 }
-
+html,
 body {
-    background: #ddd;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 100vh;
+    height: 100%;
+    overflow-x: hidden;
 }
-
-.container {
-    max-width: 991px;
-    width: 100%;
-    background: #fff;
-    border-radius: 8px;
-    overflow: hidden;
-}
-
-li{
+li {
     margin-left: 16px;
 }
-
-.toolbar {
-    padding: 16px;
-    background: #eee;
-}
-
-.toolbar .head {
-    display: flex;
-    grid-gap: 10px;
-    margin-bottom: 16px;
-}
-
-.toolbar .head input {
-    max-width: 100px;
-    padding: 6px 10px;
-    border-radius: 6px;
-    boder: 20px solid #ddd;
-    outline: none;
-}
-
-.toolbar .head select {
-    background: #fff;
-    border: 2px solid #eee;
-    border-radius: 6px;
-    outline: none;
-    cursor: pointer;
-}
-
-.toolbar .head color {
-    background: #fff;
-    border: 2px solid #ddd;
-    border-radius: 6px;
-    outline: none;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    grid-gap: 6px;
-    padding: 0 10px;
-}
-
-.toolbar .head .color span{
-    font-size: 14px;
-}
-
-.toolbar .head input {
-    border: none;
-    padding: 0;
-    height: 26px;
-    width: 200px;
-    background: #fff;
-    cursor: pointer;
-}
-
-.toolbar .head .color input::-moz-color-swatch{
-    width: 10px;
-    height: 10px;
-    border: none;
-    border-radius: 50%;
-}
-
-.toolbar .btn-toolbar{
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-}
-
-.toolbar .btn-toolbar button{
-    background: #fff;
-    border: 2px solid #ddd;
-    border-radius: 6px;
-    cursor: pointer;
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-}
-
-.toolbar .btn-toolbar button:hover{
-    background: #f3f3f3;
-    border: 2px solid #ddd;
-    border-radius: 6px;
-    cursor: pointer;
-}
-
-#content{
+#content {
     padding: 16px;
     outline: none;
 }
-
-.show-code[data-active="true"]{
+.show-code[data-active="true"] {
     background: #eee;
 }
-
 /* Estilos para los botones insertados en el contenido */
-.template-btn, .dynamic-button{
+.template-btn,
+.dynamic-button {
     display: inline-block;
     padding: 4px 8px;
     margin: 0 4px;
@@ -133,19 +34,19 @@ li{
     font-size: 0.9em;
     cursor: default;
 }
-
 .editor-table {
-    margin: 16px auto;   /* espacio arriba y abajo, centrado horizontal */
+    margin: 16px auto;
+    /* espacio arriba y abajo, centrado horizontal */
     border-collapse: collapse;
-    width: auto;         /* que se ajuste al contenido */
+    width: auto;
+    /* que se ajuste al contenido */
 }
-
-.editor-table td, .editor-table th {
+.editor-table td,
+.editor-table th {
     border: 1px solid #ccc;
     padding: 8px;
     text-align: center;
 }
-
 .table-control {
     background: #f0f0f0;
     border: 1px solid #ccc;
@@ -155,27 +56,21 @@ li{
     padding: 4px 8px;
     margin: 4px;
 }
-
 .table-control:hover {
     background: #e0e0e0;
 }
-
 .table-control.delete {
     background: #ffdddd;
     border: 1px solid #cc0000;
     color: #a00;
 }
-
 .table-control.delete:hover {
     background: #ffcccc;
 }
-
 .image-controls-bottom {
     margin-top: 5px;
     text-align: center;
-
 }
-
 .image-control {
     padding: 4px 8px;
     margin: 0 2px;
@@ -183,30 +78,17 @@ li{
     font-size: 12px;
     border-radius: 4px;
 }
-
 .image-control:hover {
     background: #e0e0e0;
 }
-
 .image-control.delete {
     background: #ffdddd;
     border: 1px solid #cc0000;
     color: #a00;
 }
-
 .image-control.delete:hover {
     background: #dfbfbf;
 }
-
-
-
-
-
-
-
-
-
-
 .table-control-align {
     padding: 4px 8px;
     margin: 0 2px;
@@ -218,35 +100,33 @@ li{
     color: #004080;
     transition: background 0.2s ease;
 }
-
 .table-control-align:hover {
     background: #cce0ff;
 }
-
 /* Wrapper general */
 .table-wrapper {
     display: flex;
-    flex-direction: column;   /* controles arriba, tabla en medio */
-    margin: 24px 0;           /* espacio arriba y abajo */
+    flex-direction: column;
+    /* controles arriba, tabla en medio */
+    margin: 24px 0;
+    /* espacio arriba y abajo */
     position: relative;
 }
-
 /* Controles superiores e inferiores siempre centrados */
 .table-controls-top,
 .table-controls-bottom {
     display: flex;
-    justify-content: center;  /* mantiene los botones centrados */
+    justify-content: center;
+    /* mantiene los botones centrados */
     gap: 8px;
     margin: 8px 0;
 }
-
 /* Contenedor de tabla */
 .table-container {
     display: flex;
     flex-direction: column;
     margin: 0 auto;
 }
-
 /* Controles laterales */
 .table-controls-side {
     display: flex;
@@ -254,29 +134,24 @@ li{
     justify-content: center;
     margin-left: 8px;
 }
-
 /* --- NUEVAS REGLAS DE ALINEACIÓN --- */
 .table-wrapper.align-left .table-container {
     align-items: flex-start;
     margin: 0;
 }
-
 .table-wrapper.align-center .table-container {
     align-items: center;
     margin: 0 auto;
 }
-
 .table-wrapper.align-right .table-container {
     align-items: flex-end;
     margin: 0;
 }
-
 /* Tabla */
 .editor-table {
     border-collapse: collapse;
     margin: 0 auto;
 }
-
 .editor-table td {
     border: 1px solid #ccc;
     padding: 8px;
@@ -293,16 +168,17 @@ li{
 
 .image-controls-top {
     position: absolute;
-    top: -30px; /* siempre arriba de la imagen */
+    top: -30px;
+    /* siempre arriba de la imagen */
     left: 50%;
     transform: translateX(-50%);
-    background: rgba(255,255,255,0.9);
+    background: rgba(255, 255, 255, 0.9);
     padding: 4px;
     border-radius: 4px;
     z-index: 10;
 }
 
-.image-control-align{
+.image-control-align {
     padding: 4px 8px;
     margin: 0 2px;
     cursor: pointer;
@@ -313,19 +189,23 @@ li{
     color: #004080;
 }
 
-.image-control-align:hover{
+.image-control-align:hover {
     background: #cce0ff;
 }
 
 .image-wrapper {
     position: relative;
-    display: block;       /* bloque para que margin auto funcione */
-    margin: 1em auto;     /* centrado por defecto */
-    text-align: center;   /* asegura que el contenido interno se centre */
+    display: block;
+    /* bloque para que margin auto funcione */
+    margin: 1em auto;
+    /* centrado por defecto */
+    text-align: center;
+    /* asegura que el contenido interno se centre */
 }
 
 .img-container {
-    display: inline-block; /* permite que se centre dentro del wrapper */
+    display: inline-block;
+    /* permite que se centre dentro del wrapper */
     position: relative;
 }
 
@@ -369,29 +249,29 @@ li{
 }
 
 .resize-handle.top-left {
-    top: 0; left: 0;
+    top: 0;
+    left: 0;
     transform: translate(-50%, -50%);
     cursor: nwse-resize;
 }
+
 .resize-handle.top-right {
-    top: 0; right: 0;
+    top: 0;
+    right: 0;
     transform: translate(50%, -50%);
     cursor: nesw-resize;
 }
+
 .resize-handle.bottom-left {
-    bottom: 0; left: 0;
+    bottom: 0;
+    left: 0;
     transform: translate(-50%, 50%);
     cursor: nesw-resize;
 }
+
 .resize-handle.bottom-right {
-    bottom: 0; right: 0;
+    bottom: 0;
+    right: 0;
     transform: translate(50%, 50%);
     cursor: nwse-resize;
 }
-
-
-
-
-
-
-

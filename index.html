@@ -1,128 +1,184 @@
-<!DOCTYPE html>
-<html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Bootstrap icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+
     <link rel="stylesheet" href="style.css">
-    <title>Editor De Texto</title>
+
+    <title>Editor de Plantillas</title>
 </head>
 
 <body>
-    <!-- Contenedor Principal -->
-    <div class="container">
-        <!-- Toolbar -->
-        <div class="toolbar">
-            <div class="head">
-                <input id="filename" type="text" placeholder="Nombre Del Archivo" value="Sin nombrar ">
-                <!-- Opciones Del ToolBar -->
-                <!-- Exportado -->
-                <select onchange="saveAsPDF(this.value); this.selectedIndex = 0;">
-                    <option value="" selected="" hidden="" disabled="">
-                        Archivo
-                    </option>
 
-                    <option value="new">
-                        Nuevo Documento
-                    </option>
-                    <option value="pdf">
-                        Guardar cómo PDF
-                    </option>
-                    <option value="save">
-                        Guardar plantilla
-                    </option>
-                </select>
-                <!-- Formato -->
-                <select onchange="setBlockFormat(this.value); this.selectedIndex = 0;">
-                    <option value="" selected="" hidden="" disabled="">
-                        Formato
-                    </option>
 
-                    <option value="h1">Encabezado 1</option>
-                    <option value="h2">Encabezado 2</option>
-                    <option value="h3">Encabezado 3</option>
-                    <option value="h4">Encabezado 4</option>
-                    <option value="h5">Encabezado 5</option>
-                    <option value="h6">Encabezado 6</option>
-                    <option value="p">Parrafo</option>
-                </select>
-                <!-- Selector de fuente -->
-                <select onchange="setFontFamily(this.value); this.selectedIndex = 0;">
-                    <option value="" selected hidden disabled>Fuente</option>
-                    <optgroup label="Modernas">
-                        <option value="Arial, sans-serif">Arial</option>
-                        <option value="'Helvetica Neue', Helvetica, sans-serif">Helvetica</option>
-                        <option value="'Open Sans', sans-serif">Open Sans</option>
-                        <option value="Verdana, Geneva, sans-serif">Verdana</option>
-                    </optgroup>
-                    <optgroup label="Tradicionales">)">
-                        <option value="'Times New Roman', Times, serif">Times New Roman</option>
-                        <option value="Georgia, serif">Georgia</option>
-                        <option value="'Palatino Linotype', serif">Palatino</option>
-                    </optgroup>
-                    <optgroup label="Técnicas">
-                        <option value="'Courier New', Courier, monospace">Courier New</option>
-                    </optgroup>
-                </select>
 
-                <!-- Tamaño de fuente -->
-                <select onchange="setFontSize(this.value); this.selectedIndex = 0;">
-                    <option value="" selected hidden disabled>Tamaño De Fuente</option>
-                    <option value="12px">Muy Pequeño</option>
-                    <option value="14px">Pequeño</option>
-                    <option value="16px">Regular</option>
-                    <option value="20px">Medio</option>
-                    <option value="24px">Largo</option>
-                    <option value="32px">Extra Largo</option>
-                    <option value="48px">Grande</option>
-                </select>
-                <!-- Color y fondo -->
-                <div>
-                    <span>Color</span>
-                    <input oninput="formatDoc('foreColor',this.value); this.value='#000000';" type="color">
+    <div class="container-fluid py-3">
+
+        <!-- HEADER -->
+        <div class="row mb-3">
+            <div class="col">
+                <div class="card shadow-sm">
+                    <div class="card-body d-flex gap-3 align-items-center">
+
+                        <input id="filename" type="text" class="form-control w-25" placeholder="Nombre del archivo"
+                            value="Sin nombrar">
+
+                        <!-- Archivo -->
+                        <select class="form-select w-auto" onchange="saveAsPDF(this.value); this.selectedIndex=0;">
+                            <option hidden selected>Archivo</option>
+                            <option value="new">Nuevo</option>
+                            <option value="pdf">Guardar PDF</option>
+                            <option value="save">Guardar Plantilla</option>
+                        </select>
+
+                        <!-- Formato -->
+                        <select class="form-select w-auto" onchange="setBlockFormat(this.value); this.selectedIndex=0;">
+                            <option hidden selected>Formato</option>
+                            <option value="h1">Encabezado 1</option>
+                            <option value="h2">Encabezado 2</option>
+                            <option value="h3">Encabezado 3</option>
+                            <option value="h4">Encabezado 4</option>
+                            <option value="h5">Encabezado 5</option>
+                            <option value="h6">Encabezado 6</option>
+                            <option value="p">Párrafo</option>
+                        </select>
+
+                        <!-- Fuente -->
+                        <select class="form-select w-auto" onchange="setFontFamily(this.value); this.selectedIndex=0;">
+                            <option hidden selected>Fuente</option>
+                            <option value="Arial">Arial</option>
+                            <option value="Verdana">Verdana</option>
+                            <option value="Georgia">Georgia</option>
+                        </select>
+
+                        <!-- Tamaño -->
+                        <select class="form-select w-auto" onchange="setFontSize(this.value); this.selectedIndex=0;">
+                            <option hidden selected>Tamaño</option>
+                            <option value="12px">12</option>
+                            <option value="16px">16</option>
+                            <option value="24px">24</option>
+                        </select>
+
+                        <!-- Color -->
+                        <input type="color" class="form-control form-control-color"
+                            oninput="formatDoc('foreColor',this.value)">
+
+                        <!-- Fondo -->
+                        <input type="color" class="form-control form-control-color"
+                            oninput="formatDoc('hiliteColor',this.value)">
+
+                    </div>
                 </div>
-
-                <div>
-                    <span>Fondo</span>
-                    <input oninput="formatDoc('hiliteColor',this.value); this.value='#000000';" type="color">
-                </div>
-
-
-            </div>
-            <div class="btn-toolbar">
-                <button onclick="saveContent()"><i class="bi bi-floppy-fill"></i></button>
-                <button onclick="undo()"><i class="bi bi-arrow-counterclockwise"></i></button>
-                <button onclick="redo()"><i class="bi bi-arrow-clockwise"></i></button>
-                <button onclick="clearFormattingToParagraph()"><i class="bi bi-eraser"></i></button>
-                <button onclick="bold()"><i class="bi bi-type-bold"></i></button>
-                <button onclick="underline()"><i class="bi bi-type-underline"></i></button>
-                <button onclick="italic()"><i class="bi bi-type-italic"></i></button>
-                <button onclick="strikethrough()"><i class="bi bi-type-strikethrough"></i></button>
-                <button onclick="alignText('left')"><i class="bi bi-text-left"></i></i></button>
-                <button onclick="alignText('center')"><i class="bi bi-text-center"></i></button>
-                <button onclick="alignText('right')"><i class="bi bi-text-right"></i></button>
-                <button onclick="alignText('justify')"><i class="bi bi-justify"></i></button>
-                <button onclick="toggleList('ul')"><i class="bi bi-list-ul"></i></button>
-                <button onclick="toggleList('ol')"><i class="bi bi-list-ol"></i></button>
-                <button onclick="addLink()"><i class="bi bi-link"></i></button>
-                <button onclick="insertImageBase64()"><i class="bi bi-image"></i></button>
-                <button onclick="insertTable()"><i class="bi bi-table"></i></button>
-                <button onclick="insertButton()"><i class="bi bi-node-plus"></i></button>
-                <button class="show-code" data-active="false">&lt;/&gt;</button>
             </div>
         </div>
+        <!-- TOOLBAR -->
+        <div class="row mb-3">
+            <div class="col">
+                <div class="card shadow-sm">
+                    <div class="card-body">
 
-        <!-- Toolbar -->
-        <div id="content" contenteditable="true" spellcheck="false">
-            
+                        <div class="btn-toolbar gap-2 flex-wrap">
+
+                            <div class="btn-group">
+                                <button class="btn btn-outline-secondary" onclick="undo()">
+                                    <i class="bi bi-arrow-counterclockwise"></i>
+                                </button>
+
+                                <button class="btn btn-outline-secondary" onclick="redo()">
+                                    <i class="bi bi-arrow-clockwise"></i>
+                                </button>
+                            </div>
+
+                            <div class="btn-group">
+                                 <button class="btn btn-outline-secondary" onclick="clearFormattingToParagraph()">
+                                    <i class="bi bi-eraser"></i>
+                                </button>
+
+                                <button class="btn btn-outline-secondary" onclick="bold()">
+                                    <i class="bi bi-type-bold"></i>
+                                </button>
+
+                                <button class="btn btn-outline-secondary" onclick="italic()">
+                                    <i class="bi bi-type-italic"></i>
+                                </button>
+
+                                <button class="btn btn-outline-secondary" onclick="underline()">
+                                    <i class="bi bi-type-underline"></i>
+                                </button>
+                            </div>
+
+                            <div class="btn-group">
+                                <button class="btn btn-outline-secondary" onclick="alignText('left')">
+                                    <i class="bi bi-text-left"></i>
+                                </button>
+
+                                <button class="btn btn-outline-secondary" onclick="alignText('center')">
+                                    <i class="bi bi-text-center"></i>
+                                </button>
+
+                                <button class="btn btn-outline-secondary" onclick="alignText('right')">
+                                    <i class="bi bi-text-right"></i>
+                                </button>
+                            </div>
+
+                            <div class="btn-group">
+                                <button class="btn btn-outline-secondary" onclick="toggleList('ul')">
+                                    <i class="bi bi-list-ul"></i>
+                                </button>
+
+                                <button class="btn btn-outline-secondary" onclick="toggleList('ol')">
+                                    <i class="bi bi-list-ol"></i>
+                                </button>
+                            </div>
+
+                            <div class="btn-group">
+                                <button class="btn btn-outline-secondary" onclick="insertImageBase64()">
+                                    <i class="bi bi-image"></i>
+                                </button>
+
+                                <button class="btn btn-outline-secondary" onclick="insertTable()">
+                                    <i class="bi bi-table"></i>
+                                </button>
+
+                                <button class="btn btn-outline-primary" onclick="showButtonCard()">
+                                    <i class="bi bi-node-plus"></i>
+                                </button>
+                            </div>
+
+                            <button class="btn btn-dark show-code">&lt;/&gt;</button>
+
+                        </div>
+
+                    </div>
+                </div>
+            </div>
         </div>
-    </div>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <script src="script.js"></script>
+        <!-- EDITOR -->
+        <div class="row">
+            <div class="col">
+
+                <div class="card shadow">
+
+                    <div class="card-body">
+
+                        <div id="content" contenteditable="true" class="form-control" style="min-height:600px;">
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+        <script src="script.js"></script>
+
 </body>
 
-</html>
-</body>
 
-</html>
+</body>
