@@ -27,12 +27,8 @@ li {
     display: inline-block;
     padding: 4px 8px;
     margin: 0 4px;
-    border-radius: 4px;
-    border: 1px solid #ccc;
-    background: #f0f0f0;
-    color: #222;
     font-size: 0.9em;
-    cursor: default;
+    cursor: pointer;
 }
 .editor-table {
     margin: 16px auto;

@@ -9,6 +9,15 @@ function formatDoc(cmd, value=null) {
 }
 let currentFont = 'Arial';
 const filename = document.getElementById('filename');
+let savedRange = null;
+let buttonModal = null;
+document.addEventListener("DOMContentLoaded", function () {
+    const modalEl = document.getElementById('buttonModal');
+    if (modalEl) {
+        buttonModal = new bootstrap.Modal(modalEl);
+    }
+});
+
 function bold() {
     const sel = window.getSelection();
     if (!sel.rangeCount) return;
@@ -373,42 +382,94 @@ function saveAsPDF(value) {
     }
 }
 
-    function insertButton() {
-        const editor = document.getElementById("content");
-        if(!editor) return;
-        editor.focus();
-        const label = prompt('Texto del botón:', 'Botón');
-        if(label === null) return; // cancelado
+function openButtonModal() {
 
-        // Crear el botón de plantilla
-        const btn = document.createElement('button');
-        btn.className = 'template-btn';
-        btn.setAttribute('contenteditable', 'false');
-        btn.textContent = label;
+    const editor = document.getElementById("content");
+    if (!editor) return;
 
-        // Insertar en la posición del cursor usando Range
-        const sel = window.getSelection();
-        if(sel && sel.rangeCount > 0){
-            const range = sel.getRangeAt(0);
-            // Insertar el nodo
-            range.deleteContents();
-            range.insertNode(btn);
-            // Añadir un espacio después para poder seguir escribiendo
-            const space = document.createTextNode('\u00A0');
-            btn.after(space);
-            // Mover el caret después del espacio
-            range.setStartAfter(space);
-            range.collapse(true);
-            sel.removeAllRanges();
-            sel.addRange(range);
-        } else {
-            editor.appendChild(btn);
-            editor.appendChild(document.createTextNode('\u00A0'));
-        }
+    editor.focus();
 
-        // Actualizar listeners (enlaces y botones)
-        updateInteractiveListeners();
+    const sel = window.getSelection();
+
+    if (sel && sel.rangeCount > 0) {
+        savedRange = sel.getRangeAt(0).cloneRange();
     }
+
+    buttonModal.show();
+}
+
+
+function insertButton() {
+
+    const editor = document.getElementById("content");
+    if (!editor) return;
+
+    /* ===== valores desde el card/modal ===== */
+
+    const label = document.getElementById("btnLabel").value.trim();
+    if (!label) {
+        alert("Debe indicar un texto");
+        return;
+    }
+
+    const color = document.querySelector('input[name="btnColor"]:checked').value;
+    const action = document.getElementById("btnAction").value;
+
+    /* ===== crear botón ===== */
+
+    const btn = document.createElement('button');
+    btn.className = `btn ${color} template-btn`;
+    btn.setAttribute('contenteditable', 'false');
+    btn.dataset.action = action;
+    btn.textContent = label;
+
+    editor.focus();
+
+    /* ===== TU MISMA LÓGICA RANGE ===== */
+
+    const sel = window.getSelection();
+
+    if (savedRange) {
+        savedRange.deleteContents();
+        savedRange.insertNode(btn);
+
+        const space = document.createTextNode('\u00A0');
+        btn.after(space);
+
+        savedRange.setStartAfter(space);
+        savedRange.collapse(true);
+        sel.removeAllRanges();
+        sel.addRange(savedRange);
+
+    } else if (sel && sel.rangeCount > 0) {
+
+        const range = sel.getRangeAt(0);
+        range.deleteContents();
+        range.insertNode(btn);
+
+        const space = document.createTextNode('\u00A0');
+        btn.after(space);
+
+        range.setStartAfter(space);
+        range.collapse(true);
+        sel.removeAllRanges();
+        sel.addRange(range);
+
+    } else {
+
+        editor.appendChild(btn);
+        editor.appendChild(document.createTextNode('\u00A0'));
+    }
+
+    /* ===== limpiar y cerrar ===== */
+
+    document.getElementById("btnLabel").value = "";
+
+    buttonModal.hide();
+
+    updateInteractiveListeners();
+}
+
 
 function toggleList(type) {
     const sel = window.getSelection();
