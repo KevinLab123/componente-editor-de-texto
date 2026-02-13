@@ -7,7 +7,7 @@ function formatDoc(cmd, value=null) {
         document.execCommand(cmd);
     }
 }
-
+let currentFont = 'Arial';
 function bold() {
     const sel = window.getSelection();
     if (!sel.rangeCount) return;
@@ -36,6 +36,7 @@ function bold() {
         range.insertNode(strong);
     }
     sel.removeAllRanges();
+    setFontFamily(currentFont)
 }
 
 function underline() {
@@ -71,6 +72,7 @@ function underline() {
     }
 
     sel.removeAllRanges();
+    setFontFamily(currentFont)
 }
 
 function italic() {
@@ -105,6 +107,7 @@ function italic() {
         range.insertNode(em);
     }
     sel.removeAllRanges();
+    setFontFamily(currentFont)
 }
 
 function strikethrough() {
@@ -140,6 +143,7 @@ function strikethrough() {
         range.insertNode(s);
     }
     sel.removeAllRanges();
+    setFontFamily(currentFont);
 }
 
 function alignText(mode) {
@@ -168,10 +172,11 @@ function alignText(mode) {
     sel.removeAllRanges();
 }
 
+
 function setFontFamily(font) {
   const editor = document.getElementById('content');
     if (!editor) return;
-
+    currentFont = font;
     editor.style.fontFamily = font; // Cubre texto base y párrafos
 
     const allDescendants = editor.querySelectorAll('*');
@@ -186,6 +191,7 @@ function addLink(){
     if(url){
         document.execCommand("createLink", false, url);
         updateInteractiveListeners();
+        setFontFamily(currentFont)
     }
 }
 
@@ -449,6 +455,7 @@ function setFontSize(size) {
     }
 
     sel.removeAllRanges();
+    setFontFamily(currentFont)
 }
 
 function setBlockFormat(tagName) {
@@ -824,11 +831,9 @@ function clearFormattingToParagraph() {
     if (node.nodeType === Node.TEXT_NODE) {
         node = node.parentNode;
     }
-
     const paragraph = node.closest('p, div, li, h1, h2, h3, h4, h5, h6');
     if (!paragraph || !editor.contains(paragraph)) return;
-
-    // 🚫 ZONAS PROTEGIDAS
+    //ZONAS PROTEGIDAS
     const protectedSelector = `
         table, thead, tbody, tfoot, tr, td, th,
         button, input, select, textarea,
@@ -843,7 +848,7 @@ function clearFormattingToParagraph() {
         return;
     }
 
-    // ✅ etiquetas inline que sí podemos remover
+    // etiquetas inline que sí podemos remover
     const inlineTags = [
         'strong','b','em','i','u','s','del','strike',
         'span','font','mark','small','big','sub','sup'
@@ -851,7 +856,7 @@ function clearFormattingToParagraph() {
 
     paragraph.querySelectorAll(inlineTags.join(',')).forEach(el => {
 
-        // 🚫 No tocar si está dentro de zona protegida
+        //  No tocar si está dentro de zona protegida
         if (el.closest(protectedSelector)) return;
 
         while (el.firstChild) {
@@ -860,7 +865,7 @@ function clearFormattingToParagraph() {
         el.remove();
     });
 
-    // ✅ limpiar atributos visuales pero no funcionales
+    //  limpiar atributos visuales pero no funcionales
     paragraph.querySelectorAll('*').forEach(el => {
 
         if (el.closest(protectedSelector)) return;
@@ -881,6 +886,7 @@ function clearFormattingToParagraph() {
     newRange.selectNodeContents(paragraph);
     newRange.collapse(false);
     sel.addRange(newRange);
+    setFontFamily(currentFont);
 }
 
 
