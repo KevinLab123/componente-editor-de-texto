@@ -170,6 +170,35 @@ li{
     background: #ffcccc;
 }
 
+.image-controls-bottom {
+    margin-top: 5px;
+    text-align: center;
+
+}
+
+.image-control {
+    padding: 4px 8px;
+    margin: 0 2px;
+    cursor: pointer;
+    font-size: 12px;
+    border-radius: 4px;
+}
+
+.image-control:hover {
+    background: #e0e0e0;
+}
+
+.image-control.delete {
+    background: #ffdddd;
+    border: 1px solid #cc0000;
+    color: #a00;
+}
+
+.image-control.delete:hover {
+    background: #dfbfbf;
+}
+
+
 .table-wrapper {
     display: flex;
     flex-direction: column;   /* controles arriba, tabla en medio */
@@ -210,10 +239,25 @@ li{
     top: -30px; /* siempre arriba de la imagen */
     left: 50%;
     transform: translateX(-50%);
-    background: rgba(255,255,255,0.8);
+    background: rgba(255,255,255,0.9);
     padding: 4px;
     border-radius: 4px;
     z-index: 10;
+}
+
+.image-control-align{
+    padding: 4px 8px;
+    margin: 0 2px;
+    cursor: pointer;
+    font-size: 12px;
+    border-radius: 4px;
+    border: 1px solid #0066;
+    background: #e6f0ff;
+    color: #004080;
+}
+
+.image-control-align:hover{
+    background: #cce0ff;
 }
 
 .image-wrapper {

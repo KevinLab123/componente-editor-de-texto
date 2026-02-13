@@ -605,6 +605,7 @@ function insertImageBase64() {
 
             const btnLeft = document.createElement("button");
             btnLeft.textContent = "Izquierda";
+            btnLeft.className = "image-control-align";
             btnLeft.onclick = () => {
                 wrapper.classList.remove("align-center", "align-right");
                 wrapper.classList.add("align-left");
@@ -612,6 +613,7 @@ function insertImageBase64() {
 
             const btnCenter = document.createElement("button");
             btnCenter.textContent = "Centro";
+            btnCenter.className = "image-control-align";
             btnCenter.onclick = () => {
                 wrapper.classList.remove("align-left", "align-right");
                 wrapper.classList.add("align-center");
@@ -619,12 +621,11 @@ function insertImageBase64() {
 
             const btnRight = document.createElement("button");
             btnRight.textContent = "Derecha";
+            btnRight.className = "image-control-align"
             btnRight.onclick = () => {
                 wrapper.classList.remove("align-left", "align-center");
                 wrapper.classList.add("align-right");
             };
-
-            
 
             controlsTop.appendChild(btnLeft);
             controlsTop.appendChild(btnCenter);
@@ -638,11 +639,25 @@ function insertImageBase64() {
             img.src = e.target.result;
             imgContainer.appendChild(img);
 
+            // --- NUEVO: Controles inferiores ---
+            const controlsBottom = document.createElement("div");
+            controlsBottom.className = "image-controls-bottom";
+
+            const deleteImgBtn = document.createElement("button");
+            deleteImgBtn.textContent = "Eliminar imagen";
+            deleteImgBtn.className = "image-control delete";
+
+            deleteImgBtn.onclick = () => {
+                wrapper.remove();
+            };
+
+            controlsBottom.appendChild(deleteImgBtn);
+
+            // Lógica de resize (igual que tu código actual)
             img.onload = function() {
                 img.style.width = img.naturalWidth + "px";
                 img.style.height = "auto";
 
-                // Crear los 4 handles
                 const positions = ["top-left", "top-right", "bottom-left", "bottom-right"];
                 positions.forEach(pos => {
                     const handle = document.createElement("div");
@@ -689,8 +704,10 @@ function insertImageBase64() {
                 });
             };
 
+            // Ensamblar
             wrapper.appendChild(controlsTop);
             wrapper.appendChild(imgContainer);
+            wrapper.appendChild(controlsBottom); // nuevo control inferior
 
             const sel = window.getSelection();
             if (sel && sel.rangeCount > 0) {
@@ -721,6 +738,7 @@ function insertImageBase64() {
 
     input.click();
 }
+
 
 async function saveContent() {
     const editorContent = document.getElementById('content').innerHTML;
