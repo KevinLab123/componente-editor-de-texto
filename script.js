@@ -819,49 +819,72 @@ function clearFormattingToParagraph() {
     if (!sel.rangeCount || !editor) return;
 
     const range = sel.getRangeAt(0);
-    let parentBlock = range.commonAncestorContainer;
-    if (parentBlock.nodeType === Node.TEXT_NODE) {
-        parentBlock = parentBlock.parentNode;
+
+    let node = range.commonAncestorContainer;
+    if (node.nodeType === Node.TEXT_NODE) {
+        node = node.parentNode;
     }
 
-    // Extraer contenido seleccionado
-    const fragment = range.extractContents();
+    const paragraph = node.closest('p, div, li, h1, h2, h3, h4, h5, h6');
+    if (!paragraph || !editor.contains(paragraph)) return;
 
-    // Usar un contenedor temporal para manipular
-    const tempDiv = document.createElement('div');
-    tempDiv.appendChild(fragment);
+    // 🚫 ZONAS PROTEGIDAS
+    const protectedSelector = `
+        table, thead, tbody, tfoot, tr, td, th,
+        button, input, select, textarea,
+        [contenteditable="false"],
+        [data-wrapper],
+        [data-protected]
+    `;
 
-    // 1. Eliminar atributos de estilo y clase
-    tempDiv.querySelectorAll('*').forEach(el => {
-        el.removeAttribute('style');
-        el.removeAttribute('class');
-    });
+    // Si el párrafo está dentro de zona protegida → salir
+    if (paragraph.closest(protectedSelector)) {
+        console.warn("Zona protegida — no se limpia formato");
+        return;
+    }
 
-    // 2. Desenvolver etiquetas de formato (strong, em, u, etc.)
-    const tagsToRemove = ['strong','b','em','i','u','s','del','strike','span'];
-    tempDiv.querySelectorAll(tagsToRemove.join(',')).forEach(el => {
+    // ✅ etiquetas inline que sí podemos remover
+    const inlineTags = [
+        'strong','b','em','i','u','s','del','strike',
+        'span','font','mark','small','big','sub','sup'
+    ];
+
+    paragraph.querySelectorAll(inlineTags.join(',')).forEach(el => {
+
+        // 🚫 No tocar si está dentro de zona protegida
+        if (el.closest(protectedSelector)) return;
+
         while (el.firstChild) {
             el.parentNode.insertBefore(el.firstChild, el);
         }
         el.remove();
     });
 
-    // 3. Crear párrafo limpio con solo texto plano
-    const newParagraph = document.createElement('p');
-    newParagraph.textContent = tempDiv.textContent;
+    // ✅ limpiar atributos visuales pero no funcionales
+    paragraph.querySelectorAll('*').forEach(el => {
 
-    // 4. Reemplazar el bloque contenedor por el nuevo párrafo
-    const blockTags = ['H1','H2','H3','H4','H5','H6','P','DIV','LI'];
-    const closestBlock = parentBlock.closest(blockTags.join(','));
-    if (closestBlock && closestBlock !== editor) {
-        closestBlock.replaceWith(newParagraph);
-    } else {
-        range.insertNode(newParagraph);
-    }
+        if (el.closest(protectedSelector)) return;
 
-    // Reset selección
+        el.removeAttribute('style');
+        el.removeAttribute('class');
+        el.removeAttribute('color');
+        el.removeAttribute('face');
+        el.removeAttribute('size');
+    });
+
+    paragraph.removeAttribute('style');
+    paragraph.removeAttribute('class');
+
+    // Restaurar selección
     sel.removeAllRanges();
+    const newRange = document.createRange();
+    newRange.selectNodeContents(paragraph);
+    newRange.collapse(false);
+    sel.addRange(newRange);
 }
+
+
+
 
 
 
