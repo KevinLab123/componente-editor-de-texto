@@ -8,6 +8,7 @@ function formatDoc(cmd, value=null) {
     }
 }
 let currentFont = 'Arial';
+const filename = document.getElementById('filename');
 function bold() {
     const sel = window.getSelection();
     if (!sel.rangeCount) return;
@@ -354,7 +355,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-const filename = document.getElementById('filename');
+
 
 function saveAsPDF(value) {
     if(value === 'new'){
@@ -811,9 +812,11 @@ async function saveContent() {
         await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id: nextId, content: editorContent })
+            body: JSON.stringify({ id: nextId, content: editorContent,
+                name: filename.value,
+                font: currentFont,
+                department: "sin asignar" })
         });
-
         alert('Documento guardado con ID: ' + nextId);
     } catch (error) {
         console.error('Error:', error);

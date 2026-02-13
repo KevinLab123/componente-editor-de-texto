@@ -23,17 +23,28 @@ const getDocumentById = async (req, res) => {
 }
 
 const createDocument = async (req, res) => {
-    const {id,content} = req.body;
+    const { id, content, name, font, department } = req.body;
 
-    const response = await pool.query('INSERT INTO documents (id, content) VALUES ($1, $2)',[id,content]);
+    const response = await pool.query(
+        `INSERT INTO documents (id, content, name, font, department)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [id, content, name, font, department]
+    );
+
     console.log(response);
+
     res.json({
         message: 'Document created successfully',
         body: {
-            document: id,content
+            id,
+            content,
+            name,
+            font,
+            department
         }
     });
 }
+
 
 const deleteDocument = async (req, res) => {
     const id = req.params.id
