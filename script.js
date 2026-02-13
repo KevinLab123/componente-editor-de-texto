@@ -477,43 +477,41 @@ function setBlockFormat(tagName) {
     sel.removeAllRanges();
 }
 
- function insertTable() {
+function insertTable() {
     const editor = document.getElementById("content");
     if (!editor) return;
     editor.focus();
 
-    // Fijar siempre 2 filas y 2 columnas
     const rows = 2;
     const cols = 2;
 
     // Contenedor principal
     const wrapper = document.createElement("div");
-    wrapper.className = "table-wrapper";
+    wrapper.className = "table-wrapper align-center"; // por defecto centrada
+    wrapper.setAttribute("contenteditable", "false");
 
     // Controles superiores
     const controlsTop = document.createElement("div");
     controlsTop.className = "table-controls-top";
+    controlsTop.setAttribute("contenteditable", "false");
 
     const addColBtn = document.createElement("button");
     addColBtn.textContent = "+ Columna";
     addColBtn.className = "table-control";
+    addColBtn.setAttribute("contenteditable", "false");
 
     const deleteBtn = document.createElement("button");
     deleteBtn.textContent = "Eliminar tabla";
     deleteBtn.className = "table-control delete";
+    deleteBtn.setAttribute("contenteditable", "false");
 
     controlsTop.appendChild(addColBtn);
     controlsTop.appendChild(deleteBtn);
 
-    // Contenedor horizontal: tabla + controles laterales
-    const rowContainer = document.createElement("div");
-    rowContainer.style.display = "flex";
-    rowContainer.style.alignItems = "center";
-
+    // Crear tabla
     const table = document.createElement("table");
     table.className = "editor-table";
 
-    // Crear tabla 2x2
     for (let r = 0; r < rows; r++) {
         const tr = document.createElement("tr");
         for (let c = 0; c < cols; c++) {
@@ -525,14 +523,65 @@ function setBlockFormat(tagName) {
         table.appendChild(tr);
     }
 
+    // Controles laterales
     const controlsSide = document.createElement("div");
     controlsSide.className = "table-controls-side";
+    controlsSide.setAttribute("contenteditable", "false");
 
     const addRowBtn = document.createElement("button");
     addRowBtn.textContent = "+ Fila";
     addRowBtn.className = "table-control";
+    addRowBtn.setAttribute("contenteditable", "false");
 
     controlsSide.appendChild(addRowBtn);
+
+    // --- NUEVO: Contenedor de tabla + controles laterales + alineación ---
+    const tableContainer = document.createElement("div");
+    tableContainer.className = "table-container";
+    tableContainer.setAttribute("contenteditable", "false");
+
+    const rowContainer = document.createElement("div");
+    rowContainer.style.display = "flex";
+    rowContainer.style.alignItems = "center";
+    rowContainer.appendChild(table);
+    rowContainer.appendChild(controlsSide);
+
+    // Controles inferiores de alineación
+    const controlsBottom = document.createElement("div");
+    controlsBottom.className = "table-controls-bottom";
+    controlsBottom.setAttribute("contenteditable", "false");
+
+    const btnLeft = document.createElement("button");
+    btnLeft.textContent = "Izquierda";
+    btnLeft.className = "table-control-align";
+    btnLeft.onclick = () => {
+        wrapper.classList.remove("align-center", "align-right");
+        wrapper.classList.add("align-left");
+    };
+
+    const btnCenter = document.createElement("button");
+    btnCenter.textContent = "Centro";
+    btnCenter.className = "table-control-align";
+    btnCenter.onclick = () => {
+        wrapper.classList.remove("align-left", "align-right");
+        wrapper.classList.add("align-center");
+    };
+
+    const btnRight = document.createElement("button");
+    btnRight.textContent = "Derecha";
+    btnRight.className = "table-control-align";
+    btnRight.onclick = () => {
+        wrapper.classList.remove("align-left", "align-center");
+        wrapper.classList.add("align-right");
+    };
+
+    controlsBottom.appendChild(btnLeft);
+    controlsBottom.appendChild(btnCenter);
+    controlsBottom.appendChild(btnRight);
+
+    // Ensamblar contenedor de tabla
+    tableContainer.appendChild(rowContainer);
+    tableContainer.appendChild(controlsBottom);
 
     // Eventos dinámicos
     addColBtn.addEventListener("click", () => {
@@ -560,12 +609,9 @@ function setBlockFormat(tagName) {
         wrapper.remove();
     });
 
-    // Ensamblar
-    rowContainer.appendChild(table);
-    rowContainer.appendChild(controlsSide);
-
+    // Ensamblar wrapper
     wrapper.appendChild(controlsTop);
-    wrapper.appendChild(rowContainer);
+    wrapper.appendChild(tableContainer);
 
     // Insertar en el editor
     const sel = window.getSelection();
@@ -581,6 +627,9 @@ function setBlockFormat(tagName) {
         editor.appendChild(wrapper);
     }
 }
+
+
+
 
 function insertImageBase64() {
     const editor = document.getElementById("content");

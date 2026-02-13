@@ -199,20 +199,55 @@ li{
 }
 
 
+
+
+
+
+
+
+
+
+.table-control-align {
+    padding: 4px 8px;
+    margin: 0 2px;
+    cursor: pointer;
+    font-size: 12px;
+    border-radius: 4px;
+    border: 1px solid #0066cc;
+    background: #e6f0ff;
+    color: #004080;
+    transition: background 0.2s ease;
+}
+
+.table-control-align:hover {
+    background: #cce0ff;
+}
+
+/* Wrapper general */
 .table-wrapper {
     display: flex;
     flex-direction: column;   /* controles arriba, tabla en medio */
-    align-items: center;      /* todo centrado */
     margin: 24px 0;           /* espacio arriba y abajo */
     position: relative;
 }
 
-.table-controls-top {
+/* Controles superiores e inferiores siempre centrados */
+.table-controls-top,
+.table-controls-bottom {
     display: flex;
+    justify-content: center;  /* mantiene los botones centrados */
     gap: 8px;
-    margin-bottom: 8px;
+    margin: 8px 0;
 }
 
+/* Contenedor de tabla */
+.table-container {
+    display: flex;
+    flex-direction: column;
+    margin: 0 auto;
+}
+
+/* Controles laterales */
 .table-controls-side {
     display: flex;
     flex-direction: column;
@@ -220,6 +255,23 @@ li{
     margin-left: 8px;
 }
 
+/* --- NUEVAS REGLAS DE ALINEACIÓN --- */
+.table-wrapper.align-left .table-container {
+    align-items: flex-start;
+    margin: 0;
+}
+
+.table-wrapper.align-center .table-container {
+    align-items: center;
+    margin: 0 auto;
+}
+
+.table-wrapper.align-right .table-container {
+    align-items: flex-end;
+    margin: 0;
+}
+
+/* Tabla */
 .editor-table {
     border-collapse: collapse;
     margin: 0 auto;
@@ -231,6 +283,11 @@ li{
     min-width: 60px;
     text-align: center;
 }
+
+
+
+
+
 
 
 
