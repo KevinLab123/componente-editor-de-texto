@@ -628,9 +628,6 @@ function insertTable() {
     }
 }
 
-
-
-
 function insertImageBase64() {
     const editor = document.getElementById("content");
     if (!editor) return;
@@ -815,6 +812,61 @@ async function saveContent() {
         console.error('Error:', error);
     }
 }
+
+function clearFormattingToParagraph() {
+    const editor = document.getElementById('content');
+    const sel = window.getSelection();
+    if (!sel.rangeCount || !editor) return;
+
+    const range = sel.getRangeAt(0);
+    let parentBlock = range.commonAncestorContainer;
+    if (parentBlock.nodeType === Node.TEXT_NODE) {
+        parentBlock = parentBlock.parentNode;
+    }
+
+    // Extraer contenido seleccionado
+    const fragment = range.extractContents();
+
+    // Usar un contenedor temporal para manipular
+    const tempDiv = document.createElement('div');
+    tempDiv.appendChild(fragment);
+
+    // 1. Eliminar atributos de estilo y clase
+    tempDiv.querySelectorAll('*').forEach(el => {
+        el.removeAttribute('style');
+        el.removeAttribute('class');
+    });
+
+    // 2. Desenvolver etiquetas de formato (strong, em, u, etc.)
+    const tagsToRemove = ['strong','b','em','i','u','s','del','strike','span'];
+    tempDiv.querySelectorAll(tagsToRemove.join(',')).forEach(el => {
+        while (el.firstChild) {
+            el.parentNode.insertBefore(el.firstChild, el);
+        }
+        el.remove();
+    });
+
+    // 3. Crear párrafo limpio con solo texto plano
+    const newParagraph = document.createElement('p');
+    newParagraph.textContent = tempDiv.textContent;
+
+    // 4. Reemplazar el bloque contenedor por el nuevo párrafo
+    const blockTags = ['H1','H2','H3','H4','H5','H6','P','DIV','LI'];
+    const closestBlock = parentBlock.closest(blockTags.join(','));
+    if (closestBlock && closestBlock !== editor) {
+        closestBlock.replaceWith(newParagraph);
+    } else {
+        range.insertNode(newParagraph);
+    }
+
+    // Reset selección
+    sel.removeAllRanges();
+}
+
+
+
+
+
 
 
 
