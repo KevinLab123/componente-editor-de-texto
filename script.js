@@ -559,10 +559,12 @@ function insertTable() {
     wrapper.className = "table-wrapper align-center"; // siempre centrada
     wrapper.setAttribute("contenteditable", "false");
 
-    // Controles superiores
+    // --- MODIFICACIÓN: Controles superiores ---
     const controlsTop = document.createElement("div");
     controlsTop.className = "table-controls-top";
     controlsTop.setAttribute("contenteditable", "false");
+    // Atributo para que html2pdf lo ignore
+    controlsTop.setAttribute("data-html2canvas-ignore", "true"); 
 
     const addColBtn = document.createElement("button");
     addColBtn.textContent = "+ Columna";
@@ -586,16 +588,18 @@ function insertTable() {
         for (let c = 0; c < cols; c++) {
             const td = document.createElement("td");
             td.textContent = "Celda";
-            td.contentEditable = "true"; // editable
+            td.contentEditable = "true"; 
             tr.appendChild(td);
         }
         table.appendChild(tr);
     }
 
-    // Controles laterales
+    // --- MODIFICACIÓN: Controles laterales ---
     const controlsSide = document.createElement("div");
     controlsSide.className = "table-controls-side";
     controlsSide.setAttribute("contenteditable", "false");
+    // Atributo para que html2pdf lo ignore
+    controlsSide.setAttribute("data-html2canvas-ignore", "true");
 
     const addRowBtn = document.createElement("button");
     addRowBtn.textContent = "+ Fila";
@@ -610,7 +614,7 @@ function insertTable() {
     tableContainer.setAttribute("contenteditable", "false");
 
     const rowContainer = document.createElement("div");
-    rowContainer.className = "row-container"; // centrada por defecto
+    rowContainer.className = "row-container"; 
     rowContainer.appendChild(table);
     rowContainer.appendChild(controlsSide);
 
@@ -647,13 +651,13 @@ function insertTable() {
     wrapper.appendChild(controlsTop);
     wrapper.appendChild(tableContainer);
 
-    // --- NUEVO: Separadores arriba y abajo ---
+    // Separadores
     const spaceAbove = document.createElement("p");
     spaceAbove.innerHTML = "<br>";
     const spaceBelow = document.createElement("p");
     spaceBelow.innerHTML = "<br>";
 
-    // Insertar en el editor con aislamiento
+    // Lógica de inserción en el editor (sin cambios)
     const sel = window.getSelection();
     if (sel && sel.rangeCount > 0) {
         const range = sel.getRangeAt(0);
@@ -677,23 +681,12 @@ function insertTable() {
         sel.addRange(range);
         saveState();
     } else {
-        const lastChild = editor.lastChild;
-        if (lastChild && lastChild.classList &&
-            (lastChild.classList.contains("image-wrapper") || lastChild.classList.contains("table-wrapper"))) {
-            const separator = document.createElement("p");
-            separator.innerHTML = "<br>";
-            editor.appendChild(separator);
-        }
-
         editor.appendChild(spaceAbove);
         editor.appendChild(wrapper);
         editor.appendChild(spaceBelow);
         saveState();
     }
 }
-
-
-
 
 function insertImageBase64() {
     const editor = document.getElementById("content");
@@ -713,8 +706,11 @@ function insertImageBase64() {
             wrapper.className = "image-wrapper align-center"; // por defecto centrada
             wrapper.setAttribute("contenteditable", "false");
 
+            // --- MODIFICACIÓN: Controles superiores (Alineación) ---
             const controlsTop = document.createElement("div");
             controlsTop.className = "image-controls-top";
+            // Atributo para que html2pdf lo ignore
+            controlsTop.setAttribute("data-html2canvas-ignore", "true");
 
             const btnLeft = document.createElement("button");
             btnLeft.textContent = "Izquierda";
@@ -752,9 +748,11 @@ function insertImageBase64() {
             img.src = e.target.result;
             imgContainer.appendChild(img);
 
-            // Controles inferiores
+            // --- MODIFICACIÓN: Controles inferiores (Eliminación) ---
             const controlsBottom = document.createElement("div");
             controlsBottom.className = "image-controls-bottom";
+            // Atributo para que html2pdf lo ignore
+            controlsBottom.setAttribute("data-html2canvas-ignore", "true");
 
             const deleteImgBtn = document.createElement("button");
             deleteImgBtn.textContent = "Eliminar imagen";
@@ -773,6 +771,9 @@ function insertImageBase64() {
                 positions.forEach(pos => {
                     const handle = document.createElement("div");
                     handle.className = "resize-handle " + pos;
+                    // --- MODIFICACIÓN: Ignorar manijas de redimensionamiento en el PDF ---
+                    handle.setAttribute("data-html2canvas-ignore", "true");
+                    
                     imgContainer.appendChild(handle);
 
                     let isResizing = false;
@@ -820,7 +821,7 @@ function insertImageBase64() {
             wrapper.appendChild(imgContainer);
             wrapper.appendChild(controlsBottom);
 
-            // Crear separadores arriba y abajo
+            // Separadores y lógica de inserción
             const spaceAbove = document.createElement("p");
             spaceAbove.innerHTML = "<br>";
             const spaceBelow = document.createElement("p");
@@ -830,47 +831,21 @@ function insertImageBase64() {
             if (sel && sel.rangeCount > 0) {
                 const range = sel.getRangeAt(0);
 
-                // Validaciones antes de insertar imagen
                 let node = range.startContainer;
                 let insideTable = false;
                 let outsideEditor = true;
                 let insideImage = false;
 
                 while (node) {
-                    if (node === editor) {
-                        outsideEditor = false;
-                    }
-                    if (["TD","TH","TR","TABLE"].includes(node.nodeName)) {
-                        insideTable = true;
-                    }
-                    if (node.nodeName === "IMG" || (node.classList && node.classList.contains("image-wrapper"))) {
-                        insideImage = true;
-                    }
+                    if (node === editor) outsideEditor = false;
+                    if (["TD","TH","TR","TABLE"].includes(node.nodeName)) insideTable = true;
+                    if (node.nodeName === "IMG" || (node.classList && node.classList.contains("image-wrapper"))) insideImage = true;
                     node = node.parentNode;
                 }
 
-                if (insideTable) {
-                    console.log("No se puede insertar imagen dentro de una tabla.");
-                    return;
-                }
-                if (outsideEditor) {
-                    console.log("No se puede insertar imagen fuera del contenido del editor.");
-                    return;
-                }
-                if (insideImage) {
-                    console.log("No se puede insertar una imagen sobre otra imagen.");
-                    return;
-                }
+                if (insideTable || outsideEditor || insideImage) return;
 
                 range.deleteContents();
-
-                const prevNode = range.startContainer.parentNode;
-                if (prevNode && prevNode.classList && prevNode.classList.contains("image-wrapper")) {
-                    const separator = document.createElement("p");
-                    separator.innerHTML = "<br>";
-                    prevNode.after(separator);
-                }
-
                 range.insertNode(spaceAbove);
                 spaceAbove.after(wrapper);
                 wrapper.after(spaceBelow);
@@ -881,31 +856,16 @@ function insertImageBase64() {
                 sel.addRange(range);
                 saveState();
             } else {
-                const lastChild = editor.lastChild;
-                if (lastChild && lastChild.classList && lastChild.classList.contains("image-wrapper")) {
-                    const separator = document.createElement("p");
-                    separator.innerHTML = "<br>";
-                    editor.appendChild(separator);
-                }
-
                 editor.appendChild(spaceAbove);
                 editor.appendChild(wrapper);
                 editor.appendChild(spaceBelow);
                 saveState();
             }
         };
-
         reader.readAsDataURL(file);
     };
-
     input.click();
-
-   
 }
-
-
-
-
 
 async function saveContent() {
     const editorContent = document.getElementById('content').innerHTML;
