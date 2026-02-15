@@ -752,18 +752,16 @@ function insertImageBase64() {
             img.src = e.target.result;
             imgContainer.appendChild(img);
 
-            // --- NUEVO: Controles inferiores ---
+            // Controles inferiores
             const controlsBottom = document.createElement("div");
             controlsBottom.className = "image-controls-bottom";
 
             const deleteImgBtn = document.createElement("button");
             deleteImgBtn.textContent = "Eliminar imagen";
             deleteImgBtn.className = "image-control delete";
-
             deleteImgBtn.onclick = () => {
                 wrapper.remove();
             };
-
             controlsBottom.appendChild(deleteImgBtn);
 
             // Lógica de resize
@@ -831,9 +829,41 @@ function insertImageBase64() {
             const sel = window.getSelection();
             if (sel && sel.rangeCount > 0) {
                 const range = sel.getRangeAt(0);
+
+                // Validaciones antes de insertar imagen
+                let node = range.startContainer;
+                let insideTable = false;
+                let outsideEditor = true;
+                let insideImage = false;
+
+                while (node) {
+                    if (node === editor) {
+                        outsideEditor = false;
+                    }
+                    if (["TD","TH","TR","TABLE"].includes(node.nodeName)) {
+                        insideTable = true;
+                    }
+                    if (node.nodeName === "IMG" || (node.classList && node.classList.contains("image-wrapper"))) {
+                        insideImage = true;
+                    }
+                    node = node.parentNode;
+                }
+
+                if (insideTable) {
+                    console.log("No se puede insertar imagen dentro de una tabla.");
+                    return;
+                }
+                if (outsideEditor) {
+                    console.log("No se puede insertar imagen fuera del contenido del editor.");
+                    return;
+                }
+                if (insideImage) {
+                    console.log("No se puede insertar una imagen sobre otra imagen.");
+                    return;
+                }
+
                 range.deleteContents();
 
-                // Verificar si el nodo anterior es otra imagen-wrapper
                 const prevNode = range.startContainer.parentNode;
                 if (prevNode && prevNode.classList && prevNode.classList.contains("image-wrapper")) {
                     const separator = document.createElement("p");
@@ -845,14 +875,12 @@ function insertImageBase64() {
                 spaceAbove.after(wrapper);
                 wrapper.after(spaceBelow);
 
-                // Colocar cursor en el espacio inferior
                 range.setStart(spaceBelow, 0);
                 range.collapse(true);
                 sel.removeAllRanges();
                 sel.addRange(range);
                 saveState();
             } else {
-                // Si no hay selección, insertar al final del editor
                 const lastChild = editor.lastChild;
                 if (lastChild && lastChild.classList && lastChild.classList.contains("image-wrapper")) {
                     const separator = document.createElement("p");
@@ -871,7 +899,10 @@ function insertImageBase64() {
     };
 
     input.click();
+
+   
 }
+
 
 
 
