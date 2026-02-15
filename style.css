@@ -6,21 +6,26 @@
     box-sizing: border-box;
     font-family: 'Roboto', sans-serif;
 }
+
 html,
 body {
     height: 100%;
     overflow-x: hidden;
 }
+
 li {
     margin-left: 16px;
 }
+
 #content {
     padding: 16px;
     outline: none;
 }
+
 .show-code[data-active="true"] {
     background: #eee;
 }
+
 /* Estilos para los botones insertados en el contenido */
 .template-btn,
 .dynamic-button {
@@ -30,6 +35,7 @@ li {
     font-size: 0.9em;
     cursor: pointer;
 }
+
 .editor-table {
     margin: 16px auto;
     /* espacio arriba y abajo, centrado horizontal */
@@ -37,12 +43,14 @@ li {
     width: auto;
     /* que se ajuste al contenido */
 }
+
 .editor-table td,
 .editor-table th {
     border: 1px solid #ccc;
     padding: 8px;
     text-align: center;
 }
+
 .table-control {
     background: #f0f0f0;
     border: 1px solid #ccc;
@@ -52,21 +60,26 @@ li {
     padding: 4px 8px;
     margin: 4px;
 }
+
 .table-control:hover {
     background: #e0e0e0;
 }
+
 .table-control.delete {
     background: #ffdddd;
     border: 1px solid #cc0000;
     color: #a00;
 }
+
 .table-control.delete:hover {
     background: #ffcccc;
 }
+
 .image-controls-bottom {
     margin-top: 5px;
     text-align: center;
 }
+
 .image-control {
     padding: 4px 8px;
     margin: 0 2px;
@@ -74,17 +87,21 @@ li {
     font-size: 12px;
     border-radius: 4px;
 }
+
 .image-control:hover {
     background: #e0e0e0;
 }
+
 .image-control.delete {
     background: #ffdddd;
     border: 1px solid #cc0000;
     color: #a00;
 }
+
 .image-control.delete:hover {
     background: #dfbfbf;
 }
+
 .table-control-align {
     padding: 4px 8px;
     margin: 0 2px;
@@ -96,9 +113,11 @@ li {
     color: #004080;
     transition: background 0.2s ease;
 }
+
 .table-control-align:hover {
     background: #cce0ff;
 }
+
 /* Wrapper general */
 .table-wrapper {
     display: flex;
@@ -108,6 +127,7 @@ li {
     /* espacio arriba y abajo */
     position: relative;
 }
+
 /* Controles superiores e inferiores siempre centrados */
 .table-controls-top,
 .table-controls-bottom {
@@ -117,12 +137,14 @@ li {
     gap: 8px;
     margin: 8px 0;
 }
+
 /* Contenedor de tabla */
 .table-container {
     display: flex;
     flex-direction: column;
     margin: 0 auto;
 }
+
 /* Controles laterales */
 .table-controls-side {
     display: flex;
@@ -130,24 +152,29 @@ li {
     justify-content: center;
     margin-left: 8px;
 }
+
 /* --- NUEVAS REGLAS DE ALINEACIÓN --- */
 .table-wrapper.align-left .table-container {
     align-items: flex-start;
     margin: 0;
 }
+
 .table-wrapper.align-center .table-container {
     align-items: center;
     margin: 0 auto;
 }
+
 .table-wrapper.align-right .table-container {
     align-items: flex-end;
     margin: 0;
 }
+
 /* Tabla */
 .editor-table {
     border-collapse: collapse;
     margin: 0 auto;
 }
+
 .editor-table td {
     border: 1px solid #ccc;
     padding: 8px;
@@ -192,12 +219,24 @@ li {
 .image-wrapper {
     position: relative;
     display: block;
-    /* bloque para que margin auto funcione */
-    margin: 1em auto;
-    /* centrado por defecto */
-    text-align: center;
-    /* asegura que el contenido interno se centre */
+    width: 100%;
+    margin: 10px 0;
+    border-top: 1px solid #ccc;
+    border-bottom: 1px solid #ccc;
+    padding: 40px 0 10px 0;
+    /* más espacio arriba para los botones */
 }
+
+.image-controls-top {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: none;
+    padding: 2px;
+    border-radius: 4px;
+}
+
+
 
 .img-container {
     display: inline-block;

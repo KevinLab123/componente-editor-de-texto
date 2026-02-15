@@ -736,7 +736,7 @@ function insertImageBase64() {
 
             const btnRight = document.createElement("button");
             btnRight.textContent = "Derecha";
-            btnRight.className = "image-control-align"
+            btnRight.className = "image-control-align";
             btnRight.onclick = () => {
                 wrapper.classList.remove("align-left", "align-center");
                 wrapper.classList.add("align-right");
@@ -768,7 +768,7 @@ function insertImageBase64() {
 
             controlsBottom.appendChild(deleteImgBtn);
 
-            // Lógica de resize (igual que tu código actual)
+            // Lógica de resize
             img.onload = function() {
                 img.style.width = img.naturalWidth + "px";
                 img.style.height = "auto";
@@ -822,28 +822,49 @@ function insertImageBase64() {
             // Ensamblar
             wrapper.appendChild(controlsTop);
             wrapper.appendChild(imgContainer);
-            wrapper.appendChild(controlsBottom); // nuevo control inferior
+            wrapper.appendChild(controlsBottom);
+
+            // Crear separadores arriba y abajo
+            const spaceAbove = document.createElement("p");
+            spaceAbove.innerHTML = "<br>";
+            const spaceBelow = document.createElement("p");
+            spaceBelow.innerHTML = "<br>";
 
             const sel = window.getSelection();
             if (sel && sel.rangeCount > 0) {
                 const range = sel.getRangeAt(0);
                 range.deleteContents();
-                range.insertNode(wrapper);
 
-                const space = document.createElement("p");
-                space.innerHTML = "<br>";
-                wrapper.after(space);
+                // Verificar si el nodo anterior es otra imagen-wrapper
+                const prevNode = range.startContainer.parentNode;
+                if (prevNode && prevNode.classList && prevNode.classList.contains("image-wrapper")) {
+                    const separator = document.createElement("p");
+                    separator.innerHTML = "<br>";
+                    prevNode.after(separator);
+                }
 
-                range.setStart(space, 0);
+                range.insertNode(spaceAbove);
+                spaceAbove.after(wrapper);
+                wrapper.after(spaceBelow);
+
+                // Colocar cursor en el espacio inferior
+                range.setStart(spaceBelow, 0);
                 range.collapse(true);
                 sel.removeAllRanges();
                 sel.addRange(range);
                 saveState();
             } else {
+                // Si no hay selección, insertar al final del editor
+                const lastChild = editor.lastChild;
+                if (lastChild && lastChild.classList && lastChild.classList.contains("image-wrapper")) {
+                    const separator = document.createElement("p");
+                    separator.innerHTML = "<br>";
+                    editor.appendChild(separator);
+                }
+
+                editor.appendChild(spaceAbove);
                 editor.appendChild(wrapper);
-                const space = document.createElement("p");
-                space.innerHTML = "<br>";
-                editor.appendChild(space);
+                editor.appendChild(spaceBelow);
                 saveState();
             }
         };
@@ -853,6 +874,8 @@ function insertImageBase64() {
 
     input.click();
 }
+
+
 
 
 async function saveContent() {
