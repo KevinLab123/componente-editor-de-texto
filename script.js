@@ -556,7 +556,7 @@ function insertTable() {
 
     // Contenedor principal
     const wrapper = document.createElement("div");
-    wrapper.className = "table-wrapper align-center"; // por defecto centrada
+    wrapper.className = "table-wrapper align-center"; // siempre centrada
     wrapper.setAttribute("contenteditable", "false");
 
     // Controles superiores
@@ -604,53 +604,18 @@ function insertTable() {
 
     controlsSide.appendChild(addRowBtn);
 
-    // --- NUEVO: Contenedor de tabla + controles laterales + alineación ---
+    // Contenedor de tabla + controles laterales
     const tableContainer = document.createElement("div");
     tableContainer.className = "table-container";
     tableContainer.setAttribute("contenteditable", "false");
 
     const rowContainer = document.createElement("div");
-    rowContainer.style.display = "flex";
-    rowContainer.style.alignItems = "center";
+    rowContainer.className = "row-container"; // centrada por defecto
     rowContainer.appendChild(table);
     rowContainer.appendChild(controlsSide);
 
-    // Controles inferiores de alineación
-    const controlsBottom = document.createElement("div");
-    controlsBottom.className = "table-controls-bottom";
-    controlsBottom.setAttribute("contenteditable", "false");
-
-    const btnLeft = document.createElement("button");
-    btnLeft.textContent = "Izquierda";
-    btnLeft.className = "table-control-align";
-    btnLeft.onclick = () => {
-        wrapper.classList.remove("align-center", "align-right");
-        wrapper.classList.add("align-left");
-    };
-
-    const btnCenter = document.createElement("button");
-    btnCenter.textContent = "Centro";
-    btnCenter.className = "table-control-align";
-    btnCenter.onclick = () => {
-        wrapper.classList.remove("align-left", "align-right");
-        wrapper.classList.add("align-center");
-    };
-
-    const btnRight = document.createElement("button");
-    btnRight.textContent = "Derecha";
-    btnRight.className = "table-control-align";
-    btnRight.onclick = () => {
-        wrapper.classList.remove("align-left", "align-center");
-        wrapper.classList.add("align-right");
-    };
-
-    controlsBottom.appendChild(btnLeft);
-    controlsBottom.appendChild(btnCenter);
-    controlsBottom.appendChild(btnRight);
-
     // Ensamblar contenedor de tabla
     tableContainer.appendChild(rowContainer);
-    tableContainer.appendChild(controlsBottom);
 
     // Eventos dinámicos
     addColBtn.addEventListener("click", () => {
@@ -682,20 +647,53 @@ function insertTable() {
     wrapper.appendChild(controlsTop);
     wrapper.appendChild(tableContainer);
 
-    // Insertar en el editor
+    // --- NUEVO: Separadores arriba y abajo ---
+    const spaceAbove = document.createElement("p");
+    spaceAbove.innerHTML = "<br>";
+    const spaceBelow = document.createElement("p");
+    spaceBelow.innerHTML = "<br>";
+
+    // Insertar en el editor con aislamiento
     const sel = window.getSelection();
     if (sel && sel.rangeCount > 0) {
         const range = sel.getRangeAt(0);
         range.deleteContents();
-        range.insertNode(wrapper);
-        range.setStartAfter(wrapper);
+
+        const prevNode = range.startContainer.parentNode;
+        if (prevNode && prevNode.classList &&
+            (prevNode.classList.contains("image-wrapper") || prevNode.classList.contains("table-wrapper"))) {
+            const separator = document.createElement("p");
+            separator.innerHTML = "<br>";
+            prevNode.after(separator);
+        }
+
+        range.insertNode(spaceAbove);
+        spaceAbove.after(wrapper);
+        wrapper.after(spaceBelow);
+
+        range.setStart(spaceBelow, 0);
         range.collapse(true);
         sel.removeAllRanges();
         sel.addRange(range);
+        saveState();
     } else {
+        const lastChild = editor.lastChild;
+        if (lastChild && lastChild.classList &&
+            (lastChild.classList.contains("image-wrapper") || lastChild.classList.contains("table-wrapper"))) {
+            const separator = document.createElement("p");
+            separator.innerHTML = "<br>";
+            editor.appendChild(separator);
+        }
+
+        editor.appendChild(spaceAbove);
         editor.appendChild(wrapper);
+        editor.appendChild(spaceBelow);
+        saveState();
     }
 }
+
+
+
 
 function insertImageBase64() {
     const editor = document.getElementById("content");

@@ -118,14 +118,14 @@ li {
     background: #cce0ff;
 }
 
-/* Wrapper general */
 .table-wrapper {
-    display: flex;
-    flex-direction: column;
-    /* controles arriba, tabla en medio */
+    display: block; /* ya no flex */
     margin: 24px 0;
-    /* espacio arriba y abajo */
     position: relative;
+    border-top: 1px solid #ccc;
+    border-bottom: 1px solid #ccc;
+    padding: 40px 0 10px 0;
+    width: 100%; /* ocupa todo el ancho disponible */
 }
 
 /* Controles superiores e inferiores siempre centrados */
@@ -133,41 +133,22 @@ li {
 .table-controls-bottom {
     display: flex;
     justify-content: center;
-    /* mantiene los botones centrados */
     gap: 8px;
     margin: 8px 0;
 }
 
 /* Contenedor de tabla */
 .table-container {
-    display: flex;
-    flex-direction: column;
     margin: 0 auto;
 }
+
+/* Row container controla tabla + controles laterales */
+.row-container { display: inline-flex; /* inline-flex evita que se expanda a todo el ancho */ justify-content: center; /* mantiene la tabla centrada */ align-items: center; /* alinea verticalmente tabla y botón */ gap: 4px; /* separación mínima */ }
 
 /* Controles laterales */
-.table-controls-side {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    margin-left: 8px;
-}
+.table-controls-side { display: inline-flex; /* en línea, no columna */ align-items: center; /* centrado vertical */ margin-left: 4px; /* pequeño espacio a la derecha de la tabla */ }
 
-/* --- NUEVAS REGLAS DE ALINEACIÓN --- */
-.table-wrapper.align-left .table-container {
-    align-items: flex-start;
-    margin: 0;
-}
 
-.table-wrapper.align-center .table-container {
-    align-items: center;
-    margin: 0 auto;
-}
-
-.table-wrapper.align-right .table-container {
-    align-items: flex-end;
-    margin: 0;
-}
 
 /* Tabla */
 .editor-table {
