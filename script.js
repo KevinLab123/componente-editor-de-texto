@@ -210,29 +210,17 @@ let history = [];
 let currentIndex = -1;
 
 function saveState() {
-    // Clonamos el innerHTML actual
+
     let rawHTML = content.innerHTML;
-    // Usamos DOMParser para manipular el HTML como documento
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(rawHTML, "text/html");
-    // Eliminamos todas las imágenes
-    doc.querySelectorAll("img").forEach(el => el.remove());
-    // Eliminamos todos los botones
-    doc.querySelectorAll("button").forEach(el => el.remove());
-    // También puedes eliminar wrappers específicos si lo deseas
-    doc.querySelectorAll(".image-wrapper, .image-controls-top, .img-container, .resize-handle")
-       .forEach(el => el.remove());
-    // Obtenemos el HTML limpio
-    let sanitizedHTML = doc.body.innerHTML;
-    // Si estamos en medio del historial y escribimos algo nuevo, eliminamos los estados futuros
+
     if (currentIndex < history.length - 1) {
         history = history.slice(0, currentIndex + 1);
     }
-    // Guardamos el nuevo estado ya limpio
-    history.push(sanitizedHTML);
-    // Ajustamos el índice al último estado
+
+    history.push(rawHTML);
     currentIndex = history.length - 1;
 }
+
 
 function undo(){
     if(currentIndex > 0){
@@ -560,7 +548,7 @@ function insertTable() {
     wrapper.className = "table-wrapper align-center";
     wrapper.setAttribute("contenteditable", "false");
 
-    // --- CONTROLES SUPERIORES (TODOS AQUÍ) ---
+    // --- CONTROLES SUPERIORES ---
     const controlsTop = document.createElement("div");
     controlsTop.className = "table-controls-top";
     controlsTop.setAttribute("contenteditable", "false");
@@ -568,23 +556,23 @@ function insertTable() {
 
     const addColBtn = document.createElement("button");
     addColBtn.textContent = "Agregar Columna";
-    addColBtn.className = "table-control";
+    addColBtn.className = "table-control btn-add-col";
 
     const addRowBtn = document.createElement("button");
     addRowBtn.textContent = "Agregar Fila";
-    addRowBtn.className = "table-control";
+    addRowBtn.className = "table-control btn-add-row";
 
     const deleteRowBtn = document.createElement("button");
     deleteRowBtn.textContent = "Eliminar fila";
-    deleteRowBtn.className = "table-control-delete";
+    deleteRowBtn.className = "table-control-delete btn-delete-row";
 
     const deleteColBtn = document.createElement("button");
     deleteColBtn.textContent = "Eliminar columna";
-    deleteColBtn.className = "table-control-delete";
+    deleteColBtn.className = "table-control-delete btn-delete-col";
 
     const deleteBtn = document.createElement("button");
     deleteBtn.textContent = "Eliminar tabla";
-    deleteBtn.className = "table-control-delete-table";
+    deleteBtn.className = "table-control-delete-table btn-delete-table";
 
     [
         addColBtn,
@@ -603,85 +591,16 @@ function insertTable() {
 
     for (let r = 0; r < rows; r++) {
         const tr = document.createElement("tr");
+
         for (let c = 0; c < cols; c++) {
             const td = document.createElement("td");
             td.textContent = "Celda";
             td.contentEditable = "true";
             tr.appendChild(td);
         }
-        table.appendChild(tr);
-    }
-
-    // Función para obtener celda actual
-    function getCurrentCell() {
-        const selection = window.getSelection();
-        if (!selection.rangeCount) return null;
-
-        let node = selection.anchorNode;
-
-        if (node.nodeType === 3) node = node.parentNode;
-
-        while (node && node !== table) {
-            if (node.tagName === "TD") return node;
-            node = node.parentNode;
-        }
-
-        return null;
-    }
-
-    // EVENTOS
-
-    addColBtn.addEventListener("click", () => {
-        table.querySelectorAll("tr").forEach(tr => {
-            const td = document.createElement("td");
-            td.textContent = "Celda";
-            td.contentEditable = "true";
-            tr.appendChild(td);
-        });
-    });
-
-    addRowBtn.addEventListener("click", () => {
-        const tr = document.createElement("tr");
-        const colCount = table.rows[0].cells.length;
-
-        for (let c = 0; c < colCount; c++) {
-            const td = document.createElement("td");
-            td.textContent = "Celda";
-            td.contentEditable = "true";
-            tr.appendChild(td);
-        }
 
         table.appendChild(tr);
-    });
-
-    deleteRowBtn.addEventListener("click", () => {
-        const cell = getCurrentCell();
-        if (!cell) return;
-
-        if (table.rows.length <= 1) {
-            alert("No puedes eliminar la última fila.");
-            return;
-        }
-
-        cell.parentNode.remove();
-    });
-
-    deleteColBtn.addEventListener("click", () => {
-        const cell = getCurrentCell();
-        if (!cell) return;
-
-        if (table.rows[0].cells.length <= 1) {
-            alert("No puedes eliminar la última columna.");
-            return;
-        }
-
-        const index = cell.cellIndex;
-        Array.from(table.rows).forEach(row => row.deleteCell(index));
-    });
-
-    deleteBtn.addEventListener("click", () => {
-        wrapper.remove();
-    });
+    }
 
     // Ensamblar
     wrapper.appendChild(controlsTop);
@@ -718,9 +637,178 @@ function insertTable() {
     }
 }
 
+// --- CLICK: tablas + imágenes ---
+document.addEventListener("click", function (e) {
+
+    const target = e.target;
+
+    // --- TABLAS ---
+    const tableWrapper = target.closest(".table-wrapper");
+    if (tableWrapper) {
+        const table = tableWrapper.querySelector("table");
+
+        function getCurrentCell() {
+            const selection = window.getSelection();
+            if (!selection.rangeCount) return null;
+
+            let node = selection.anchorNode;
+            if (node.nodeType === 3) node = node.parentNode;
+
+            while (node && node !== table) {
+                if (node.tagName === "TD") return node;
+                node = node.parentNode;
+            }
+            return null;
+        }
+
+        if (target.classList.contains("btn-add-row")) {
+            const tr = document.createElement("tr");
+            const colCount = table.rows[0].cells.length;
+
+            for (let i = 0; i < colCount; i++) {
+                const td = document.createElement("td");
+                td.contentEditable = "true";
+                td.textContent = "Celda";
+                tr.appendChild(td);
+            }
+
+            table.appendChild(tr);
+            saveState();
+        }
+
+        if (target.classList.contains("btn-add-col")) {
+            Array.from(table.rows).forEach(row => {
+                const td = document.createElement("td");
+                td.contentEditable = "true";
+                td.textContent = "Celda";
+                row.appendChild(td);
+            });
+            saveState();
+        }
+
+        if (target.classList.contains("btn-delete-row")) {
+            const cell = getCurrentCell();
+            if (!cell || table.rows.length <= 1) return;
+            cell.parentNode.remove();
+            saveState();
+        }
+
+        if (target.classList.contains("btn-delete-col")) {
+            const cell = getCurrentCell();
+            if (!cell || table.rows[0].cells.length <= 1) return;
+            const index = cell.cellIndex;
+            Array.from(table.rows).forEach(row => row.deleteCell(index));
+            saveState();
+        }
+
+        if (target.classList.contains("btn-delete-table")) {
+            tableWrapper.remove();
+            saveState();
+        }
+
+        return; // si fue tabla, no seguimos al código de imagen
+    }
+
+    // --- IMÁGENES ---
+    const imageWrapper = target.closest(".image-wrapper");
+    if (imageWrapper) {
+
+        // Alineación
+        if (target.classList.contains("btn-img-left")) {
+            imageWrapper.classList.remove("align-center", "align-right");
+            imageWrapper.classList.add("align-left");
+            saveState();
+        }
+
+        if (target.classList.contains("btn-img-center")) {
+            imageWrapper.classList.remove("align-left", "align-right");
+            imageWrapper.classList.add("align-center");
+            saveState();
+        }
+
+        if (target.classList.contains("btn-img-right")) {
+            imageWrapper.classList.remove("align-left", "align-center");
+            imageWrapper.classList.add("align-right");
+            saveState();
+        }
+
+        // Eliminar imagen
+        if (target.classList.contains("image-control-delete")) {
+            imageWrapper.remove();
+            saveState();
+        }
+
+        return;
+    }
+
+});
+
+let isResizing = false;
+let currentHandle = null;
+let currentContainer = null;
+let currentImage = null;
+
+document.addEventListener("mousedown", function (e) {
+    if (!e.target.classList.contains("resize-handle")) return;
+
+    e.preventDefault();
+
+    currentHandle = e.target;
+    currentContainer = currentHandle.closest(".img-container");
+    currentImage = currentContainer.querySelector("img");
+
+    if (!currentContainer || !currentImage) return;
+
+    isResizing = true;
+});
+
+document.addEventListener("mousemove", function (e) {
+    if (!isResizing || !currentHandle) return;
+
+    const rect = currentContainer.getBoundingClientRect();
+    let newWidth;
+
+    if (currentHandle.className.includes("right")) {
+        newWidth = e.clientX - rect.left;
+    } else {
+        newWidth = rect.right - e.clientX;
+    }
+
+    // Limites de ancho
+    const minWidth = 100;
+    const maxWidth = 600;
+    newWidth = Math.max(minWidth, Math.min(newWidth, maxWidth));
+
+    // Mantener proporción
+    const aspectRatio = currentImage.naturalWidth / currentImage.naturalHeight;
+    const newHeight = newWidth / aspectRatio;
+
+    currentImage.style.width = newWidth + "px";
+    currentImage.style.height = newHeight + "px";
+
+    currentContainer.style.width = currentImage.style.width;
+    currentContainer.style.height = currentImage.style.height;
+});
+
+document.addEventListener("mouseup", function () {
+    if (isResizing) {
+        isResizing = false;
+        currentHandle = null;
+        currentContainer = null;
+        currentImage = null;
+
+        saveState(); // Guardar estado al finalizar el resize
+    }
+});
+
+
+
+
+
 
 
 function insertImageBase64() {
+
     const editor = document.getElementById("content");
     if (!editor) return;
 
@@ -728,51 +816,39 @@ function insertImageBase64() {
     input.type = "file";
     input.accept = "image/*";
 
-    input.onchange = function() {
+    input.onchange = function () {
+
         const file = input.files[0];
         if (!file) return;
 
         const reader = new FileReader();
-        reader.onload = function(e) {
+
+        reader.onload = function (e) {
+
             const wrapper = document.createElement("div");
-            wrapper.className = "image-wrapper align-center"; // por defecto centrada
+            wrapper.className = "image-wrapper align-center";
             wrapper.setAttribute("contenteditable", "false");
 
-            // --- MODIFICACIÓN: Controles superiores (Alineación) ---
+            // --- CONTROLES SUPERIORES ---
             const controlsTop = document.createElement("div");
             controlsTop.className = "image-controls-top";
-            // Atributo para que html2pdf lo ignore
             controlsTop.setAttribute("data-html2canvas-ignore", "true");
 
             const btnLeft = document.createElement("button");
             btnLeft.textContent = "Izquierda";
-            btnLeft.className = "image-control-align";
-            btnLeft.onclick = () => {
-                wrapper.classList.remove("align-center", "align-right");
-                wrapper.classList.add("align-left");
-            };
+            btnLeft.className = "image-control-align btn-img-left";
 
             const btnCenter = document.createElement("button");
             btnCenter.textContent = "Centro";
-            btnCenter.className = "image-control-align";
-            btnCenter.onclick = () => {
-                wrapper.classList.remove("align-left", "align-right");
-                wrapper.classList.add("align-center");
-            };
+            btnCenter.className = "image-control-align btn-img-center";
 
             const btnRight = document.createElement("button");
             btnRight.textContent = "Derecha";
-            btnRight.className = "image-control-align";
-            btnRight.onclick = () => {
-                wrapper.classList.remove("align-left", "align-center");
-                wrapper.classList.add("align-right");
-            };
+            btnRight.className = "image-control-align btn-img-right";
 
-            controlsTop.appendChild(btnLeft);
-            controlsTop.appendChild(btnCenter);
-            controlsTop.appendChild(btnRight);
+            controlsTop.append(btnLeft, btnCenter, btnRight);
 
-            // Contenedor exclusivo para la imagen
+            // Contenedor imagen
             const imgContainer = document.createElement("div");
             imgContainer.className = "img-container";
 
@@ -780,124 +856,65 @@ function insertImageBase64() {
             img.src = e.target.result;
             imgContainer.appendChild(img);
 
-            // --- MODIFICACIÓN: Controles inferiores (Eliminación) ---
+            // --- CONTROLES INFERIORES ---
             const controlsBottom = document.createElement("div");
             controlsBottom.className = "image-controls-bottom";
-            // Atributo para que html2pdf lo ignore
             controlsBottom.setAttribute("data-html2canvas-ignore", "true");
 
-            const deleteImgBtn = document.createElement("button");
-            deleteImgBtn.textContent = "Eliminar imagen";
-            deleteImgBtn.className = "image-control delete";
-            deleteImgBtn.onclick = () => {
-                wrapper.remove();
-            };
-            controlsBottom.appendChild(deleteImgBtn);
+            const deleteBtn = document.createElement("button");
+            deleteBtn.textContent = "Eliminar imagen";
+            deleteBtn.className = "image-control-delete";
 
-            // Lógica de resize
-            img.onload = function() {
-                img.style.width = img.naturalWidth + "px";
-                img.style.height = "auto";
+            controlsBottom.appendChild(deleteBtn);
 
-                const positions = ["top-left", "top-right", "bottom-left", "bottom-right"];
-                positions.forEach(pos => {
-                    const handle = document.createElement("div");
-                    handle.className = "resize-handle " + pos;
-                    // --- MODIFICACIÓN: Ignorar manijas de redimensionamiento en el PDF ---
-                    handle.setAttribute("data-html2canvas-ignore", "true");
-                    
-                    imgContainer.appendChild(handle);
+            // Crear handles SIN listeners individuales
+            const positions = ["top-left", "top-right", "bottom-left", "bottom-right"];
 
-                    let isResizing = false;
+            positions.forEach(pos => {
+                const handle = document.createElement("div");
+                handle.className = "resize-handle " + pos;
+                handle.setAttribute("data-html2canvas-ignore", "true");
+                imgContainer.appendChild(handle);
+            });
 
-                    handle.addEventListener("mousedown", (e) => {
-                        e.preventDefault();
-                        isResizing = true;
-                        document.addEventListener("mousemove", resize);
-                        document.addEventListener("mouseup", stopResize);
-                    });
+            wrapper.append(controlsTop, imgContainer, controlsBottom);
 
-                    function resize(e) {
-                        if (!isResizing) return;
-                        const rect = imgContainer.getBoundingClientRect();
-                        let newWidth;
-
-                        if (pos.includes("right")) {
-                            newWidth = e.clientX - rect.left;
-                        } else {
-                            newWidth = rect.right - e.clientX;
-                        }
-
-                        const maxWidth = 600, minWidth = 100;
-                        newWidth = Math.max(minWidth, Math.min(newWidth, maxWidth));
-
-                        const aspectRatio = img.naturalWidth / img.naturalHeight;
-                        const newHeight = newWidth / aspectRatio;
-
-                        img.style.width = newWidth + "px";
-                        img.style.height = newHeight + "px";
-                        imgContainer.style.width = img.style.width;
-                        imgContainer.style.height = img.style.height;
-                    }
-
-                    function stopResize() {
-                        isResizing = false;
-                        document.removeEventListener("mousemove", resize);
-                        document.removeEventListener("mouseup", stopResize);
-                    }
-                });
-            };
-
-            // Ensamblar
-            wrapper.appendChild(controlsTop);
-            wrapper.appendChild(imgContainer);
-            wrapper.appendChild(controlsBottom);
-
-            // Separadores y lógica de inserción
             const spaceAbove = document.createElement("p");
             spaceAbove.innerHTML = "<br>";
             const spaceBelow = document.createElement("p");
             spaceBelow.innerHTML = "<br>";
 
             const sel = window.getSelection();
+
             if (sel && sel.rangeCount > 0) {
+
                 const range = sel.getRangeAt(0);
-
-                let node = range.startContainer;
-                let insideTable = false;
-                let outsideEditor = true;
-                let insideImage = false;
-
-                while (node) {
-                    if (node === editor) outsideEditor = false;
-                    if (["TD","TH","TR","TABLE"].includes(node.nodeName)) insideTable = true;
-                    if (node.nodeName === "IMG" || (node.classList && node.classList.contains("image-wrapper"))) insideImage = true;
-                    node = node.parentNode;
-                }
-
-                if (insideTable || outsideEditor || insideImage) return;
-
                 range.deleteContents();
+
                 range.insertNode(spaceAbove);
                 spaceAbove.after(wrapper);
                 wrapper.after(spaceBelow);
 
                 range.setStart(spaceBelow, 0);
                 range.collapse(true);
+
                 sel.removeAllRanges();
                 sel.addRange(range);
+
                 saveState();
+
             } else {
-                editor.appendChild(spaceAbove);
-                editor.appendChild(wrapper);
-                editor.appendChild(spaceBelow);
+                editor.append(spaceAbove, wrapper, spaceBelow);
                 saveState();
             }
         };
+
         reader.readAsDataURL(file);
     };
+
     input.click();
 }
+
 
 async function saveContent() {
     const editorContent = document.getElementById('content').innerHTML;

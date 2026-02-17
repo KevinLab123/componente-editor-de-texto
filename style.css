@@ -157,13 +157,18 @@ li {
     background: #e0e0e0;
 }
 
-.image-control.delete {
+.image-control-delete {
     background: #ffdddd;
     border: 1px solid #cc0000;
     color: #a00;
+    font-size: 0.8em;
+    cursor: pointer;
+    padding: 4px 8px;
+    margin: 4px;
+    border-radius: 4px;
 }
 
-.image-control.delete:hover {
+.image-control-delete:hover {
     background: #dfbfbf;
 }
 
