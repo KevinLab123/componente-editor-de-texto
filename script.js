@@ -547,6 +547,7 @@ function setBlockFormat(tagName) {
 }
 
 function insertTable() {
+
     const editor = document.getElementById("content");
     if (!editor) return;
     editor.focus();
@@ -556,28 +557,45 @@ function insertTable() {
 
     // Contenedor principal
     const wrapper = document.createElement("div");
-    wrapper.className = "table-wrapper align-center"; // siempre centrada
+    wrapper.className = "table-wrapper align-center";
     wrapper.setAttribute("contenteditable", "false");
 
-    // --- MODIFICACIÓN: Controles superiores ---
+    // --- CONTROLES SUPERIORES (TODOS AQUÍ) ---
     const controlsTop = document.createElement("div");
     controlsTop.className = "table-controls-top";
     controlsTop.setAttribute("contenteditable", "false");
-    // Atributo para que html2pdf lo ignore
-    controlsTop.setAttribute("data-html2canvas-ignore", "true"); 
+    controlsTop.setAttribute("data-html2canvas-ignore", "true");
 
     const addColBtn = document.createElement("button");
-    addColBtn.textContent = "+ Columna";
+    addColBtn.textContent = "Agregar Columna";
     addColBtn.className = "table-control";
-    addColBtn.setAttribute("contenteditable", "false");
+
+    const addRowBtn = document.createElement("button");
+    addRowBtn.textContent = "Agregar Fila";
+    addRowBtn.className = "table-control";
+
+    const deleteRowBtn = document.createElement("button");
+    deleteRowBtn.textContent = "Eliminar fila";
+    deleteRowBtn.className = "table-control-delete";
+
+    const deleteColBtn = document.createElement("button");
+    deleteColBtn.textContent = "Eliminar columna";
+    deleteColBtn.className = "table-control-delete";
 
     const deleteBtn = document.createElement("button");
     deleteBtn.textContent = "Eliminar tabla";
-    deleteBtn.className = "table-control delete";
-    deleteBtn.setAttribute("contenteditable", "false");
+    deleteBtn.className = "table-control-delete-table";
 
-    controlsTop.appendChild(addColBtn);
-    controlsTop.appendChild(deleteBtn);
+    [
+        addColBtn,
+        addRowBtn,
+        deleteRowBtn,
+        deleteColBtn,
+        deleteBtn
+    ].forEach(btn => {
+        btn.setAttribute("contenteditable", "false");
+        controlsTop.appendChild(btn);
+    });
 
     // Crear tabla
     const table = document.createElement("table");
@@ -588,40 +606,31 @@ function insertTable() {
         for (let c = 0; c < cols; c++) {
             const td = document.createElement("td");
             td.textContent = "Celda";
-            td.contentEditable = "true"; 
+            td.contentEditable = "true";
             tr.appendChild(td);
         }
         table.appendChild(tr);
     }
 
-    // --- MODIFICACIÓN: Controles laterales ---
-    const controlsSide = document.createElement("div");
-    controlsSide.className = "table-controls-side";
-    controlsSide.setAttribute("contenteditable", "false");
-    // Atributo para que html2pdf lo ignore
-    controlsSide.setAttribute("data-html2canvas-ignore", "true");
+    // Función para obtener celda actual
+    function getCurrentCell() {
+        const selection = window.getSelection();
+        if (!selection.rangeCount) return null;
 
-    const addRowBtn = document.createElement("button");
-    addRowBtn.textContent = "+ Fila";
-    addRowBtn.className = "table-control";
-    addRowBtn.setAttribute("contenteditable", "false");
+        let node = selection.anchorNode;
 
-    controlsSide.appendChild(addRowBtn);
+        if (node.nodeType === 3) node = node.parentNode;
 
-    // Contenedor de tabla + controles laterales
-    const tableContainer = document.createElement("div");
-    tableContainer.className = "table-container";
-    tableContainer.setAttribute("contenteditable", "false");
+        while (node && node !== table) {
+            if (node.tagName === "TD") return node;
+            node = node.parentNode;
+        }
 
-    const rowContainer = document.createElement("div");
-    rowContainer.className = "row-container"; 
-    rowContainer.appendChild(table);
-    rowContainer.appendChild(controlsSide);
+        return null;
+    }
 
-    // Ensamblar contenedor de tabla
-    tableContainer.appendChild(rowContainer);
+    // EVENTOS
 
-    // Eventos dinámicos
     addColBtn.addEventListener("click", () => {
         table.querySelectorAll("tr").forEach(tr => {
             const td = document.createElement("td");
@@ -634,42 +643,61 @@ function insertTable() {
     addRowBtn.addEventListener("click", () => {
         const tr = document.createElement("tr");
         const colCount = table.rows[0].cells.length;
+
         for (let c = 0; c < colCount; c++) {
             const td = document.createElement("td");
             td.textContent = "Celda";
             td.contentEditable = "true";
             tr.appendChild(td);
         }
+
         table.appendChild(tr);
+    });
+
+    deleteRowBtn.addEventListener("click", () => {
+        const cell = getCurrentCell();
+        if (!cell) return;
+
+        if (table.rows.length <= 1) {
+            alert("No puedes eliminar la última fila.");
+            return;
+        }
+
+        cell.parentNode.remove();
+    });
+
+    deleteColBtn.addEventListener("click", () => {
+        const cell = getCurrentCell();
+        if (!cell) return;
+
+        if (table.rows[0].cells.length <= 1) {
+            alert("No puedes eliminar la última columna.");
+            return;
+        }
+
+        const index = cell.cellIndex;
+        Array.from(table.rows).forEach(row => row.deleteCell(index));
     });
 
     deleteBtn.addEventListener("click", () => {
         wrapper.remove();
     });
 
-    // Ensamblar wrapper
+    // Ensamblar
     wrapper.appendChild(controlsTop);
-    wrapper.appendChild(tableContainer);
+    wrapper.appendChild(table);
 
-    // Separadores
     const spaceAbove = document.createElement("p");
     spaceAbove.innerHTML = "<br>";
+
     const spaceBelow = document.createElement("p");
     spaceBelow.innerHTML = "<br>";
 
-    // Lógica de inserción en el editor (sin cambios)
     const sel = window.getSelection();
+
     if (sel && sel.rangeCount > 0) {
         const range = sel.getRangeAt(0);
         range.deleteContents();
-
-        const prevNode = range.startContainer.parentNode;
-        if (prevNode && prevNode.classList &&
-            (prevNode.classList.contains("image-wrapper") || prevNode.classList.contains("table-wrapper"))) {
-            const separator = document.createElement("p");
-            separator.innerHTML = "<br>";
-            prevNode.after(separator);
-        }
 
         range.insertNode(spaceAbove);
         spaceAbove.after(wrapper);
@@ -677,8 +705,10 @@ function insertTable() {
 
         range.setStart(spaceBelow, 0);
         range.collapse(true);
+
         sel.removeAllRanges();
         sel.addRange(range);
+
         saveState();
     } else {
         editor.appendChild(spaceAbove);
@@ -687,6 +717,8 @@ function insertTable() {
         saveState();
     }
 }
+
+
 
 function insertImageBase64() {
     const editor = document.getElementById("content");
@@ -964,6 +996,7 @@ function clearFormattingToParagraph() {
     sel.addRange(newRange);
     setFontFamily(currentFont);
 }
+
 
 
 
