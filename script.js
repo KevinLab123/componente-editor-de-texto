@@ -733,10 +733,38 @@ document.addEventListener("click", function (e) {
         }
 
         // Eliminar imagen
-        if (target.classList.contains("image-control-delete")) {
-            imageWrapper.remove();
-            saveState();
+     if (target.classList.contains("image-control-delete")) {
+
+    const wrapper = imageWrapper;
+    if (!wrapper) return;
+
+    const prev = wrapper.previousElementSibling;
+    const next = wrapper.nextElementSibling;
+
+    //  Eliminar párrafo vacío anterior
+    if (prev && prev.tagName === "P" && prev.innerHTML.trim() === "<br>") {
+        prev.remove();
+    }
+
+    //  Eliminar clear div y posible párrafo vacío debajo
+    if (next && next.classList.contains("image-clear-fix")) {
+
+        const nextAfterClear = next.nextElementSibling;
+
+        next.remove(); // elimina clear-fix
+
+        if (nextAfterClear && 
+            nextAfterClear.tagName === "P" && 
+            nextAfterClear.innerHTML.trim() === "<br>") {
+            nextAfterClear.remove();
         }
+    }
+
+    //  Eliminar wrapper de imagen
+    wrapper.remove();
+
+    saveState();
+}
 
         return;
     }
@@ -808,7 +836,6 @@ document.addEventListener("mouseup", function () {
 
 
 function insertImageBase64() {
-
     const editor = document.getElementById("content");
     if (!editor) return;
 
@@ -817,103 +844,115 @@ function insertImageBase64() {
     input.accept = "image/*";
 
     input.onchange = function () {
-
         const file = input.files[0];
+        
         if (!file) return;
 
-        const reader = new FileReader();
+        //  Comprimir antes de convertir a base64
+        new Compressor(file, {
+            quality: 0.5,       // calidad JPEG (0.1 - 1)
+            maxWidth: 1024,     // ancho máximo
+            success(result) {
+                const reader = new FileReader();
+                console.log("Tamaño original:", (file.size / 1024).toFixed(2), "KB"); console.log("Tamaño comprimido:", (result.size / 1024).toFixed(2), "KB");
+                reader.onload = function (e) {
+                    const wrapper = document.createElement("div");
+                    wrapper.className = "image-wrapper align-center";
+                    wrapper.setAttribute("contenteditable", "false");
 
-        reader.onload = function (e) {
+                    // --- CONTROLES SUPERIORES ---
+                    const controlsTop = document.createElement("div");
+                    controlsTop.className = "image-controls-top";
+                    controlsTop.setAttribute("data-html2canvas-ignore", "true");
 
-            const wrapper = document.createElement("div");
-            wrapper.className = "image-wrapper align-center";
-            wrapper.setAttribute("contenteditable", "false");
+                    const btnLeft = document.createElement("button");
+                    btnLeft.textContent = "Izquierda";
+                    btnLeft.className = "image-control-align btn-img-left";
 
-            // --- CONTROLES SUPERIORES ---
-            const controlsTop = document.createElement("div");
-            controlsTop.className = "image-controls-top";
-            controlsTop.setAttribute("data-html2canvas-ignore", "true");
+                    const btnCenter = document.createElement("button");
+                    btnCenter.textContent = "Centro";
+                    btnCenter.className = "image-control-align btn-img-center";
 
-            const btnLeft = document.createElement("button");
-            btnLeft.textContent = "Izquierda";
-            btnLeft.className = "image-control-align btn-img-left";
+                    const btnRight = document.createElement("button");
+                    btnRight.textContent = "Derecha";
+                    btnRight.className = "image-control-align btn-img-right";
 
-            const btnCenter = document.createElement("button");
-            btnCenter.textContent = "Centro";
-            btnCenter.className = "image-control-align btn-img-center";
+                    controlsTop.append(btnLeft, btnCenter, btnRight);
 
-            const btnRight = document.createElement("button");
-            btnRight.textContent = "Derecha";
-            btnRight.className = "image-control-align btn-img-right";
+                    // Contenedor imagen
+                    const imgContainer = document.createElement("div");
+                    imgContainer.className = "img-container";
 
-            controlsTop.append(btnLeft, btnCenter, btnRight);
+                    const img = document.createElement("img");
+                    img.src = e.target.result; // base64 optimizado
+                    imgContainer.appendChild(img);
 
-            // Contenedor imagen
-            const imgContainer = document.createElement("div");
-            imgContainer.className = "img-container";
+                    // --- CONTROLES INFERIORES ---
+                    const controlsBottom = document.createElement("div");
+                    controlsBottom.className = "image-controls-bottom";
+                    controlsBottom.setAttribute("data-html2canvas-ignore", "true");
 
-            const img = document.createElement("img");
-            img.src = e.target.result;
-            imgContainer.appendChild(img);
+                    const deleteBtn = document.createElement("button");
+                    deleteBtn.textContent = "Eliminar imagen";
+                    deleteBtn.className = "image-control-delete";
 
-            // --- CONTROLES INFERIORES ---
-            const controlsBottom = document.createElement("div");
-            controlsBottom.className = "image-controls-bottom";
-            controlsBottom.setAttribute("data-html2canvas-ignore", "true");
+                    controlsBottom.appendChild(deleteBtn);
 
-            const deleteBtn = document.createElement("button");
-            deleteBtn.textContent = "Eliminar imagen";
-            deleteBtn.className = "image-control-delete";
+                    // Crear handles SIN listeners individuales
+                    const positions = ["top-left", "top-right", "bottom-left", "bottom-right"];
+                    positions.forEach(pos => {
+                        const handle = document.createElement("div");
+                        handle.className = "resize-handle " + pos;
+                        handle.setAttribute("data-html2canvas-ignore", "true");
+                        imgContainer.appendChild(handle);
+                    });
 
-            controlsBottom.appendChild(deleteBtn);
+                    wrapper.append(controlsTop, imgContainer, controlsBottom);
 
-            // Crear handles SIN listeners individuales
-            const positions = ["top-left", "top-right", "bottom-left", "bottom-right"];
+                     const clearDiv = document.createElement("div");
+                    clearDiv.className = "image-clear-fix";
+                    clearDiv.setAttribute("contenteditable", "false");    
 
-            positions.forEach(pos => {
-                const handle = document.createElement("div");
-                handle.className = "resize-handle " + pos;
-                handle.setAttribute("data-html2canvas-ignore", "true");
-                imgContainer.appendChild(handle);
-            });
+                    const spaceAbove = document.createElement("p");
+                    spaceAbove.innerHTML = "<br>";
+                    const spaceBelow = document.createElement("p");
+                    spaceBelow.innerHTML = "<br>";
 
-            wrapper.append(controlsTop, imgContainer, controlsBottom);
+                    const sel = window.getSelection();
 
-            const spaceAbove = document.createElement("p");
-            spaceAbove.innerHTML = "<br>";
-            const spaceBelow = document.createElement("p");
-            spaceBelow.innerHTML = "<br>";
+                    if (sel && sel.rangeCount > 0) {
+                        const range = sel.getRangeAt(0);
+                        range.deleteContents();
 
-            const sel = window.getSelection();
+                        range.insertNode(spaceAbove);
+                        spaceAbove.after(wrapper);
+                        wrapper.after(spaceBelow);
+                        wrapper.after(clearDiv);  
 
-            if (sel && sel.rangeCount > 0) {
+                        range.setStart(spaceBelow, 0);
+                        range.collapse(true);
 
-                const range = sel.getRangeAt(0);
-                range.deleteContents();
+                        sel.removeAllRanges();
+                        sel.addRange(range);
 
-                range.insertNode(spaceAbove);
-                spaceAbove.after(wrapper);
-                wrapper.after(spaceBelow);
+                        saveState();
+                    } else {
+                        editor.append(spaceAbove, wrapper, spaceBelow);
+                        saveState();
+                    }
+                };
 
-                range.setStart(spaceBelow, 0);
-                range.collapse(true);
-
-                sel.removeAllRanges();
-                sel.addRange(range);
-
-                saveState();
-
-            } else {
-                editor.append(spaceAbove, wrapper, spaceBelow);
-                saveState();
+                reader.readAsDataURL(result); // convertir imagen comprimida a base64
+            },
+            error(err) {
+                console.error("Error al comprimir imagen:", err);
             }
-        };
-
-        reader.readAsDataURL(file);
+        });
     };
 
     input.click();
 }
+
 
 
 async function saveContent() {

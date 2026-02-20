@@ -5,8 +5,8 @@ const cors = require('cors');
 app.use(cors());
 
 //middlewares funciones ejecutadas antes de llegar a las rutas
-app.use(express.json());//para que el servidor pueda entender los datos en formato json
-app.use(express.urlencoded({extended: false}));//para que el servidor pueda entender los datos enviados desde formularios
+app.use(express.json({ limit: '200mb' })); 
+app.use(express.urlencoded({ extended: false, limit: '200mb' }));
 
 
 //routes

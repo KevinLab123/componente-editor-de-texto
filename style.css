@@ -214,7 +214,12 @@ li {
     border-top: 1px solid #ccc;
     border-bottom: 1px solid #ccc;
     padding: 40px 0 10px 0;
-    /* más espacio arriba para los botones */
+    clear: both; /* 🔥 fuerza separación entre bloques */
+}
+
+.img-container {
+    display: inline-block;
+    position: relative;
 }
 
 .image-controls-top {
@@ -228,16 +233,12 @@ li {
 
 
 
-.img-container {
-    display: inline-block;
-    /* permite que se centre dentro del wrapper */
-    position: relative;
-}
+
 
 .align-left {
     margin-left: 0;
     margin-right: auto;
-    float: left;
+
     text-align: left;
 }
 
@@ -245,14 +246,14 @@ li {
     margin-left: auto;
     margin-right: auto;
     display: block;
-    float: none;
+
     text-align: center;
 }
 
 .align-right {
     margin-left: auto;
     margin-right: 0;
-    float: right;
+
     text-align: right;
 }
 
