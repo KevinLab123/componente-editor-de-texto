@@ -7,6 +7,8 @@ function formatDoc(cmd, value=null) {
         document.execCommand(cmd);
     }
 }
+
+
 let currentFont = 'Arial';
 const filename = document.getElementById('filename');
 let savedRange = null;
@@ -47,6 +49,7 @@ function bold() {
     }
     sel.removeAllRanges();
     setFontFamily(currentFont)
+    commitChange(); // Guardar estado después de aplicar formato
 }
 
 function underline() {
@@ -83,6 +86,7 @@ function underline() {
 
     sel.removeAllRanges();
     setFontFamily(currentFont)
+    commitChange(); // Guardar estado después de aplicar formato
 }
 
 function italic() {
@@ -118,6 +122,7 @@ function italic() {
     }
     sel.removeAllRanges();
     setFontFamily(currentFont)
+    commitChange(); // Guardar estado después de aplicar formato
 }
 
 function strikethrough() {
@@ -154,34 +159,51 @@ function strikethrough() {
     }
     sel.removeAllRanges();
     setFontFamily(currentFont);
+    commitChange(); // Guardar estado después de aplicar formato
 }
 
 function alignText(mode) {
+
+    if (!activeEditor) return;
+
+    activeEditor.focus();
+
     const sel = window.getSelection();
     if (!sel.rangeCount) return;
 
-    let range = sel.getRangeAt(0);
-    let node = range.commonAncestorContainer;
+    const range = sel.getRangeAt(0);
 
-    // 1. Identificar el ancestro de bloque más cercano (P, H1-H6, DIV)
-    if (node.nodeType === 3) node = node.parentElement;
-    const blockElement = node.closest('p, h1, h2, h3, h4, h5, h6, div, li');
+    let node = range.startContainer;
 
-    if (blockElement) {
-        // 2. Limpiar alineaciones previas en elementos hijos para evitar conflictos
-        const nestedAlignments = blockElement.querySelectorAll('[style*="text-align"]');
-        nestedAlignments.forEach(el => {
-            el.style.textAlign = '';
-            if (el.getAttribute('style') === '') el.removeAttribute('style');
-        });
-
-        // 3. Aplicar la alineación al bloque raíz
-        blockElement.style.textAlign = mode; 
+    if (node.nodeType === 3) {
+        node = node.parentElement;
     }
-    
-    sel.removeAllRanges();
-}
 
+    if (!activeEditor.contains(node)) return;
+
+    let block = node.closest('p, h1, h2, h3, h4, h5, h6, li');
+
+    // 🔥 Si no existe bloque, crearlo
+    if (!block) {
+        const p = document.createElement('p');
+        p.innerHTML = activeEditor.innerHTML;
+        activeEditor.innerHTML = '';
+        activeEditor.appendChild(p);
+        block = p;
+    }
+
+    // 🔥 Guardar estado antes del cambio
+    const before = activeEditor.innerHTML;
+
+    block.style.textAlign = mode;
+
+    const after = activeEditor.innerHTML;
+
+    // 🔥 Solo guardar si realmente cambió
+    if (before !== after) {
+        saveState();
+    }
+}
 
 function setFontFamily(font) {
   const editor = document.getElementById('content');
@@ -205,39 +227,115 @@ function addLink(){
     }
 }
 
-const content = document.getElementById('content');
-let history = [];
-let currentIndex = -1;
+const headerEditor = document.getElementById('header-editor');
+const bodyEditor = document.getElementById('body-editor');
+const footerEditor = document.getElementById('footer-editor');
+let histories = {
+    header: {
+        history: [],
+        currentIndex: -1
+    },
+    body: {
+        history: [],
+        currentIndex: -1
+    },
+    footer: {
+        history: [],
+        currentIndex: -1
+    }
+};
+let activeEditor = null;
+let activeKey = null;
+
+function setActiveEditor(editor, key) {
+    activeEditor = editor;
+    activeKey = key;
+}
+
+headerEditor.addEventListener('focus', () => {
+    setActiveEditor(headerEditor, 'header');
+});
+
+bodyEditor.addEventListener('focus', () => {
+    setActiveEditor(bodyEditor, 'body');
+});
+
+footerEditor.addEventListener('focus', () => {
+    setActiveEditor(footerEditor, 'footer');
+});
+
+function commitChange() {
+    if (!activeEditor) return;
+
+    activeEditor.focus();   // asegurar foco
+    saveState();            // guardar estado
+}
 
 function saveState() {
 
-    let rawHTML = content.innerHTML;
+    if (!activeEditor) return;
 
-    if (currentIndex < history.length - 1) {
-        history = history.slice(0, currentIndex + 1);
+    let editorHistory = histories[activeKey];
+    let rawHTML = activeEditor.innerHTML;
+
+    //  No guardar si es igual al último estado
+    if (editorHistory.history.length > 0 &&
+        editorHistory.history[editorHistory.currentIndex] === rawHTML) {
+        return;
     }
 
-    history.push(rawHTML);
-    currentIndex = history.length - 1;
+    if (editorHistory.currentIndex < editorHistory.history.length - 1) {
+        editorHistory.history = editorHistory.history.slice(0, editorHistory.currentIndex + 1);
+    }
+
+    editorHistory.history.push(rawHTML);
+    editorHistory.currentIndex = editorHistory.history.length - 1;
 }
 
 
-function undo(){
-    if(currentIndex > 0){
-        currentIndex--;
-        content.innerHTML = history[currentIndex];
+function undo() {
+
+    if (!activeEditor) return;
+
+    let editorHistory = histories[activeKey];
+
+    if (editorHistory.currentIndex > 0) {
+        editorHistory.currentIndex--;
+        activeEditor.innerHTML = editorHistory.history[editorHistory.currentIndex];
     }
 }
 
-function redo(){
-    if(currentIndex < history.length - 1){
-        currentIndex++;
-        content.innerHTML = history[currentIndex];
+function redo() {
+
+    if (!activeEditor) return;
+
+    let editorHistory = histories[activeKey];
+
+    if (editorHistory.currentIndex < editorHistory.history.length - 1) {
+        editorHistory.currentIndex++;
+        activeEditor.innerHTML = editorHistory.history[editorHistory.currentIndex];
     }
 }
-//Detectar cambios en el editor y inicializar con el contenido inicial
-content.addEventListener("input", saveState);
-saveState();
+// Listeners de input
+headerEditor.addEventListener("input", saveState);
+bodyEditor.addEventListener("input", saveState);
+footerEditor.addEventListener("input", saveState);
+
+// Inicializar historial
+function initializeHistories() {
+    Object.keys(histories).forEach(key => {
+        let editor;
+
+        if (key === 'header') editor = headerEditor;
+        if (key === 'body') editor = bodyEditor;
+        if (key === 'footer') editor = footerEditor;
+
+        histories[key].history.push(editor.innerHTML);
+        histories[key].currentIndex = 0;
+    });
+}
+
+initializeHistories();
 
 // Función para actualizar listeners en elementos interactivos (enlaces y botones de plantilla)
 function updateInteractiveListeners() {
@@ -352,8 +450,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-
-
 function saveAsPDF(value) {
     if(value === 'new'){
         content.innerHTML = '';
@@ -385,7 +481,6 @@ function openButtonModal() {
 
     buttonModal.show();
 }
-
 
 function insertButton() {
 
@@ -457,7 +552,6 @@ function insertButton() {
 
     updateInteractiveListeners();
 }
-
 
 function toggleList(type) {
     const sel = window.getSelection();
@@ -829,12 +923,6 @@ document.addEventListener("mouseup", function () {
     }
 });
 
-
-
-
-
-
-
 function insertImageBase64() {
     const editor = document.getElementById("content");
     if (!editor) return;
@@ -952,8 +1040,6 @@ function insertImageBase64() {
 
     input.click();
 }
-
-
 
 async function saveContent() {
     const editorContent = document.getElementById('content').innerHTML;

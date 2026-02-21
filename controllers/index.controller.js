@@ -23,12 +23,12 @@ const getDocumentById = async (req, res) => {
 }
 
 const createDocument = async (req, res) => {
-    const { id, content, name, font, department } = req.body;
+    const { id, content, name, font, department,header,footer } = req.body;
 
     const response = await pool.query(
-        `INSERT INTO documents (id, content, name, font, department)
-         VALUES ($1, $2, $3, $4, $5)`,
-        [id, content, name, font, department]
+        `INSERT INTO documents (id, content, name, font, department,header,footer)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+        [id, content, name, font, department,header,footer]
     );
 
     console.log(response);
@@ -40,7 +40,9 @@ const createDocument = async (req, res) => {
             content,
             name,
             font,
-            department
+            department,
+            header,
+            footer
         }
     });
 }
