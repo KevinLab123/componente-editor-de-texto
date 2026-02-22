@@ -246,6 +246,10 @@ let histories = {
 };
 let activeEditor = null;
 let activeKey = null;
+let isResizing = false;
+let currentHandle = null;
+let currentContainer = null;
+let currentImage = null;
 
 function setActiveEditor(editor, key) {
     activeEditor = editor;
@@ -262,6 +266,257 @@ bodyEditor.addEventListener('focus', () => {
 
 footerEditor.addEventListener('focus', () => {
     setActiveEditor(footerEditor, 'footer');
+});
+
+
+// Actualizar elementos interactivos cuando haya cambios en el contenido
+const editors = document.querySelectorAll('.editor-section');
+
+editors.forEach(editor => {
+    editor.addEventListener('input', updateInteractiveListeners);
+});
+
+// Esperar a que el DOM esté completamente cargado
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.show-code').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            const card = button.closest('.card');
+            const editor = card.querySelector('.editor-section');
+            toggleCodeMode(editor, button);
+        });
+    });
+});
+
+function toggleCodeMode(editor, button) {
+
+    let isCodeMode = button.dataset.active === "true";
+    isCodeMode = !isCodeMode;
+
+    button.dataset.active = isCodeMode;
+
+    if (isCodeMode) {
+
+        const html = editor.innerHTML;
+        editor.dataset.htmlBackup = html;
+
+        editor.innerHTML = "";
+        editor.textContent = html;
+
+        editor.contentEditable = false;
+        editor.style.fontFamily = 'monospace';
+        editor.style.fontSize = '12px';
+        editor.style.whiteSpace = 'pre-wrap';
+        editor.style.backgroundColor = '#f5f5f5';
+
+    } else {
+
+        try {
+            editor.innerHTML = editor.textContent;
+        } catch (e) {
+            editor.innerHTML = editor.dataset.htmlBackup;
+        }
+
+        editor.contentEditable = true;
+        editor.removeAttribute("style");
+
+        updateInteractiveListeners();
+    }
+}
+
+
+
+// --- CLICK: tablas + imágenes ---
+document.addEventListener("click", function (e) {
+    const editor = e.target.closest('.editor-section');
+    if(!editor) return;
+    const target = e.target;
+
+    // --- TABLAS ---
+    const tableWrapper = target.closest(".table-wrapper");
+    if (tableWrapper) {
+        const table = tableWrapper.querySelector("table");
+
+        function getCurrentCell() {
+            const selection = window.getSelection();
+            if (!selection.rangeCount) return null;
+
+            let node = selection.anchorNode;
+            if (node.nodeType === 3) node = node.parentNode;
+
+            while (node && node !== table) {
+                if (node.tagName === "TD") return node;
+                node = node.parentNode;
+            }
+            return null;
+        }
+
+        if (target.classList.contains("btn-add-row")) {
+            const tr = document.createElement("tr");
+            const colCount = table.rows[0].cells.length;
+
+            for (let i = 0; i < colCount; i++) {
+                const td = document.createElement("td");
+                td.contentEditable = "true";
+                td.textContent = "Celda";
+                tr.appendChild(td);
+            }
+
+            table.appendChild(tr);
+            saveState();
+        }
+
+        if (target.classList.contains("btn-add-col")) {
+            Array.from(table.rows).forEach(row => {
+                const td = document.createElement("td");
+                td.contentEditable = "true";
+                td.textContent = "Celda";
+                row.appendChild(td);
+            });
+            saveState();
+        }
+
+        if (target.classList.contains("btn-delete-row")) {
+            const cell = getCurrentCell();
+            if (!cell || table.rows.length <= 1) return;
+            cell.parentNode.remove();
+            saveState();
+        }
+
+        if (target.classList.contains("btn-delete-col")) {
+            const cell = getCurrentCell();
+            if (!cell || table.rows[0].cells.length <= 1) return;
+            const index = cell.cellIndex;
+            Array.from(table.rows).forEach(row => row.deleteCell(index));
+            saveState();
+        }
+
+        if (target.classList.contains("btn-delete-table")) {
+            tableWrapper.remove();
+            saveState();
+        }
+
+        return; // si fue tabla, no seguimos al código de imagen
+    }
+
+    // --- IMÁGENES ---
+    const imageWrapper = target.closest(".image-wrapper");
+    if (imageWrapper) {
+
+        // Alineación
+        if (target.classList.contains("btn-img-left")) {
+            imageWrapper.classList.remove("align-center", "align-right");
+            imageWrapper.classList.add("align-left");
+            saveState();
+        }
+
+        if (target.classList.contains("btn-img-center")) {
+            imageWrapper.classList.remove("align-left", "align-right");
+            imageWrapper.classList.add("align-center");
+            saveState();
+        }
+
+        if (target.classList.contains("btn-img-right")) {
+            imageWrapper.classList.remove("align-left", "align-center");
+            imageWrapper.classList.add("align-right");
+            saveState();
+        }
+
+        // Eliminar imagen
+     if (target.classList.contains("image-control-delete")) {
+
+    const wrapper = imageWrapper;
+    if (!wrapper) return;
+
+    const prev = wrapper.previousElementSibling;
+    const next = wrapper.nextElementSibling;
+
+    //  Eliminar párrafo vacío anterior
+    if (prev && prev.tagName === "P" && prev.innerHTML.trim() === "<br>") {
+        prev.remove();
+    }
+
+    //  Eliminar clear div y posible párrafo vacío debajo
+    if (next && next.classList.contains("image-clear-fix")) {
+
+        const nextAfterClear = next.nextElementSibling;
+
+        next.remove(); // elimina clear-fix
+
+        if (nextAfterClear && 
+            nextAfterClear.tagName === "P" && 
+            nextAfterClear.innerHTML.trim() === "<br>") {
+            nextAfterClear.remove();
+        }
+    }
+
+    //  Eliminar wrapper de imagen
+    wrapper.remove();
+
+    saveState();
+}
+
+        return;
+    }
+
+});
+
+document.addEventListener("mousedown", function (e) {
+
+    if (!e.target.classList.contains("resize-handle")) return;
+
+    const editor = e.target.closest('.editor-section');
+    if (!editor) return;
+
+    e.preventDefault();
+
+    currentHandle = e.target;
+    currentContainer = currentHandle.closest(".img-container");
+    currentImage = currentContainer.querySelector("img");
+
+    if (!currentContainer || !currentImage) return;
+
+    isResizing = true;
+});
+
+document.addEventListener("mousemove", function (e) {
+
+    if (!isResizing || !currentHandle) return;
+
+    const rect = currentContainer.getBoundingClientRect();
+    let newWidth;
+
+    if (currentHandle.className.includes("right")) {
+        newWidth = e.clientX - rect.left;
+    } else {
+        newWidth = rect.right - e.clientX;
+    }
+
+    const minWidth = 100;
+    const maxWidth = 600;
+
+    newWidth = Math.max(minWidth, Math.min(newWidth, maxWidth));
+
+    const aspectRatio = currentImage.naturalWidth / currentImage.naturalHeight;
+    const newHeight = newWidth / aspectRatio;
+
+    currentImage.style.width = newWidth + "px";
+    currentImage.style.height = newHeight + "px";
+
+    currentContainer.style.width = currentImage.style.width;
+    currentContainer.style.height = currentImage.style.height;
+});
+
+document.addEventListener("mouseup", function () {
+
+    if (!isResizing) return;
+
+    isResizing = false;
+    currentHandle = null;
+    currentContainer = null;
+    currentImage = null;
+
+    saveState();
 });
 
 function commitChange() {
@@ -375,80 +630,6 @@ function updateInteractiveListeners() {
     });
 }
 
-// Actualizar elementos interactivos cuando haya cambios en el contenido
-content.addEventListener('input', updateInteractiveListeners);
-
-// Esperar a que el DOM esté completamente cargado
-document.addEventListener('DOMContentLoaded', function() {
-    const content = document.getElementById('content');
-    const showCode = document.querySelector('.show-code');
-    
-    let isCodeMode = false;
-    let htmlBackup = '';
-
-    if(showCode) {
-        console.log('Botón encontrado:', showCode); // Debug
-        
-        showCode.addEventListener('click', function(e) {
-            e.preventDefault();
-            console.log('Botón clickeado'); // Debug
-            
-            isCodeMode = !isCodeMode;
-            showCode.dataset.active = isCodeMode;
-            
-            if(isCodeMode){
-                // Entrar en modo código - mostrar el HTML
-                htmlBackup = content.innerHTML;
-                
-                // Obtener el HTML y mostrarlo como texto
-                let htmlContent = content.innerHTML;
-                console.log('HTML guardado:', htmlContent); // Debug
-                
-                // Limpiar y mostrar HTML
-                content.innerHTML = '';
-                content.textContent = htmlContent;
-                
-                content.contentEditable = false;
-                content.style.fontFamily = 'monospace';
-                content.style.fontSize = '12px';
-                content.style.whiteSpace = 'pre-wrap';
-                content.style.overflowWrap = 'break-word';
-                content.style.backgroundColor = '#f5f5f5';
-                
-                // Seleccionar todo para copiar
-                setTimeout(() => {
-                    content.focus();
-                    const range = document.createRange();
-                    range.selectNodeContents(content);
-                    const sel = window.getSelection();
-                    sel.removeAllRanges();
-                    sel.addRange(range);
-                }, 10);
-                
-            }else{
-                // Salir del modo código - restaurar el HTML
-                try{
-                    const htmlCode = content.textContent.trim();
-                    content.innerHTML = htmlCode;
-                }catch(e){
-                    console.error('Error al restaurar HTML:', e);
-                    content.innerHTML = htmlBackup;
-                }
-                
-                content.contentEditable = true;
-                content.style.fontFamily = '';
-                content.style.fontSize = '';
-                content.style.whiteSpace = '';
-                content.style.overflowWrap = '';
-                content.style.backgroundColor = '';
-                
-                updateInteractiveListeners();
-            }
-        });
-    } else {
-        console.error('Botón .show-code no encontrado');
-    }
-});
 
 function saveAsPDF(value) {
     if(value === 'new'){
@@ -731,219 +912,41 @@ function insertTable() {
     }
 }
 
-// --- CLICK: tablas + imágenes ---
-document.addEventListener("click", function (e) {
 
-    const target = e.target;
 
-    // --- TABLAS ---
-    const tableWrapper = target.closest(".table-wrapper");
-    if (tableWrapper) {
-        const table = tableWrapper.querySelector("table");
 
-        function getCurrentCell() {
-            const selection = window.getSelection();
-            if (!selection.rangeCount) return null;
 
-            let node = selection.anchorNode;
-            if (node.nodeType === 3) node = node.parentNode;
-
-            while (node && node !== table) {
-                if (node.tagName === "TD") return node;
-                node = node.parentNode;
-            }
-            return null;
-        }
-
-        if (target.classList.contains("btn-add-row")) {
-            const tr = document.createElement("tr");
-            const colCount = table.rows[0].cells.length;
-
-            for (let i = 0; i < colCount; i++) {
-                const td = document.createElement("td");
-                td.contentEditable = "true";
-                td.textContent = "Celda";
-                tr.appendChild(td);
-            }
-
-            table.appendChild(tr);
-            saveState();
-        }
-
-        if (target.classList.contains("btn-add-col")) {
-            Array.from(table.rows).forEach(row => {
-                const td = document.createElement("td");
-                td.contentEditable = "true";
-                td.textContent = "Celda";
-                row.appendChild(td);
-            });
-            saveState();
-        }
-
-        if (target.classList.contains("btn-delete-row")) {
-            const cell = getCurrentCell();
-            if (!cell || table.rows.length <= 1) return;
-            cell.parentNode.remove();
-            saveState();
-        }
-
-        if (target.classList.contains("btn-delete-col")) {
-            const cell = getCurrentCell();
-            if (!cell || table.rows[0].cells.length <= 1) return;
-            const index = cell.cellIndex;
-            Array.from(table.rows).forEach(row => row.deleteCell(index));
-            saveState();
-        }
-
-        if (target.classList.contains("btn-delete-table")) {
-            tableWrapper.remove();
-            saveState();
-        }
-
-        return; // si fue tabla, no seguimos al código de imagen
-    }
-
-    // --- IMÁGENES ---
-    const imageWrapper = target.closest(".image-wrapper");
-    if (imageWrapper) {
-
-        // Alineación
-        if (target.classList.contains("btn-img-left")) {
-            imageWrapper.classList.remove("align-center", "align-right");
-            imageWrapper.classList.add("align-left");
-            saveState();
-        }
-
-        if (target.classList.contains("btn-img-center")) {
-            imageWrapper.classList.remove("align-left", "align-right");
-            imageWrapper.classList.add("align-center");
-            saveState();
-        }
-
-        if (target.classList.contains("btn-img-right")) {
-            imageWrapper.classList.remove("align-left", "align-center");
-            imageWrapper.classList.add("align-right");
-            saveState();
-        }
-
-        // Eliminar imagen
-     if (target.classList.contains("image-control-delete")) {
-
-    const wrapper = imageWrapper;
-    if (!wrapper) return;
-
-    const prev = wrapper.previousElementSibling;
-    const next = wrapper.nextElementSibling;
-
-    //  Eliminar párrafo vacío anterior
-    if (prev && prev.tagName === "P" && prev.innerHTML.trim() === "<br>") {
-        prev.remove();
-    }
-
-    //  Eliminar clear div y posible párrafo vacío debajo
-    if (next && next.classList.contains("image-clear-fix")) {
-
-        const nextAfterClear = next.nextElementSibling;
-
-        next.remove(); // elimina clear-fix
-
-        if (nextAfterClear && 
-            nextAfterClear.tagName === "P" && 
-            nextAfterClear.innerHTML.trim() === "<br>") {
-            nextAfterClear.remove();
-        }
-    }
-
-    //  Eliminar wrapper de imagen
-    wrapper.remove();
-
-    saveState();
-}
-
-        return;
-    }
-
-});
-
-let isResizing = false;
-let currentHandle = null;
-let currentContainer = null;
-let currentImage = null;
-
-document.addEventListener("mousedown", function (e) {
-    if (!e.target.classList.contains("resize-handle")) return;
-
-    e.preventDefault();
-
-    currentHandle = e.target;
-    currentContainer = currentHandle.closest(".img-container");
-    currentImage = currentContainer.querySelector("img");
-
-    if (!currentContainer || !currentImage) return;
-
-    isResizing = true;
-});
-
-document.addEventListener("mousemove", function (e) {
-    if (!isResizing || !currentHandle) return;
-
-    const rect = currentContainer.getBoundingClientRect();
-    let newWidth;
-
-    if (currentHandle.className.includes("right")) {
-        newWidth = e.clientX - rect.left;
-    } else {
-        newWidth = rect.right - e.clientX;
-    }
-
-    // Limites de ancho
-    const minWidth = 100;
-    const maxWidth = 600;
-    newWidth = Math.max(minWidth, Math.min(newWidth, maxWidth));
-
-    // Mantener proporción
-    const aspectRatio = currentImage.naturalWidth / currentImage.naturalHeight;
-    const newHeight = newWidth / aspectRatio;
-
-    currentImage.style.width = newWidth + "px";
-    currentImage.style.height = newHeight + "px";
-
-    currentContainer.style.width = currentImage.style.width;
-    currentContainer.style.height = currentImage.style.height;
-});
-
-document.addEventListener("mouseup", function () {
-    if (isResizing) {
-        isResizing = false;
-        currentHandle = null;
-        currentContainer = null;
-        currentImage = null;
-
-        saveState(); // Guardar estado al finalizar el resize
-    }
-});
 
 function insertImageBase64() {
-    const editor = document.getElementById("content");
-    if (!editor) return;
+
+    if (!activeEditor) {
+        alert("Selecciona un editor antes de insertar la imagen.");
+        return;
+    }
 
     const input = document.createElement("input");
     input.type = "file";
     input.accept = "image/*";
 
     input.onchange = function () {
+
         const file = input.files[0];
-        
         if (!file) return;
 
-        //  Comprimir antes de convertir a base64
         new Compressor(file, {
-            quality: 0.5,       // calidad JPEG (0.1 - 1)
-            maxWidth: 1024,     // ancho máximo
+            quality: 0.5,
+            maxWidth: 1024,
+
             success(result) {
+
                 const reader = new FileReader();
-                console.log("Tamaño original:", (file.size / 1024).toFixed(2), "KB"); console.log("Tamaño comprimido:", (result.size / 1024).toFixed(2), "KB");
+
+                console.log("Tamaño original:", (file.size / 1024).toFixed(2), "KB");
+                console.log("Tamaño comprimido:", (result.size / 1024).toFixed(2), "KB");
+
                 reader.onload = function (e) {
+
+                    // --- WRAPPER PRINCIPAL ---
                     const wrapper = document.createElement("div");
                     wrapper.className = "image-wrapper align-center";
                     wrapper.setAttribute("contenteditable", "false");
@@ -967,12 +970,13 @@ function insertImageBase64() {
 
                     controlsTop.append(btnLeft, btnCenter, btnRight);
 
-                    // Contenedor imagen
+                    // --- CONTENEDOR IMAGEN ---
                     const imgContainer = document.createElement("div");
                     imgContainer.className = "img-container";
 
                     const img = document.createElement("img");
-                    img.src = e.target.result; // base64 optimizado
+                    img.src = e.target.result;
+
                     imgContainer.appendChild(img);
 
                     // --- CONTROLES INFERIORES ---
@@ -986,9 +990,8 @@ function insertImageBase64() {
 
                     controlsBottom.appendChild(deleteBtn);
 
-                    // Crear handles SIN listeners individuales
-                    const positions = ["top-left", "top-right", "bottom-left", "bottom-right"];
-                    positions.forEach(pos => {
+                    // --- HANDLES RESIZE ---
+                    ["top-left", "top-right", "bottom-left", "bottom-right"].forEach(pos => {
                         const handle = document.createElement("div");
                         handle.className = "resize-handle " + pos;
                         handle.setAttribute("data-html2canvas-ignore", "true");
@@ -997,41 +1000,58 @@ function insertImageBase64() {
 
                     wrapper.append(controlsTop, imgContainer, controlsBottom);
 
-                     const clearDiv = document.createElement("div");
+                    // --- ESPACIADO ---
+                    const clearDiv = document.createElement("div");
                     clearDiv.className = "image-clear-fix";
-                    clearDiv.setAttribute("contenteditable", "false");    
+                    clearDiv.setAttribute("contenteditable", "false");
 
                     const spaceAbove = document.createElement("p");
                     spaceAbove.innerHTML = "<br>";
+
                     const spaceBelow = document.createElement("p");
                     spaceBelow.innerHTML = "<br>";
 
+                    // --- INSERTAR EN EL EDITOR ACTIVO ---
                     const sel = window.getSelection();
 
                     if (sel && sel.rangeCount > 0) {
+
                         const range = sel.getRangeAt(0);
-                        range.deleteContents();
 
-                        range.insertNode(spaceAbove);
-                        spaceAbove.after(wrapper);
-                        wrapper.after(spaceBelow);
-                        wrapper.after(clearDiv);  
+                        // 🔥 Validar que el rango pertenece al editor activo
+                        const container = range.commonAncestorContainer;
+                        const parentEditor = container.nodeType === 3
+                            ? container.parentNode.closest(".editor-section")
+                            : container.closest(".editor-section");
 
-                        range.setStart(spaceBelow, 0);
-                        range.collapse(true);
+                        if (parentEditor !== activeEditor) {
+                            activeEditor.append(spaceAbove, wrapper, clearDiv, spaceBelow);
+                        } else {
 
-                        sel.removeAllRanges();
-                        sel.addRange(range);
+                            range.deleteContents();
 
-                        saveState();
+                            range.insertNode(spaceAbove);
+                            spaceAbove.after(wrapper);
+                            wrapper.after(clearDiv);
+                            clearDiv.after(spaceBelow);
+
+                            range.setStart(spaceBelow, 0);
+                            range.collapse(true);
+
+                            sel.removeAllRanges();
+                            sel.addRange(range);
+                        }
+
                     } else {
-                        editor.append(spaceAbove, wrapper, spaceBelow);
-                        saveState();
+                        activeEditor.append(spaceAbove, wrapper, clearDiv, spaceBelow);
                     }
+
+                    saveState();
                 };
 
-                reader.readAsDataURL(result); // convertir imagen comprimida a base64
+                reader.readAsDataURL(result);
             },
+
             error(err) {
                 console.error("Error al comprimir imagen:", err);
             }
