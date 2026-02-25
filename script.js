@@ -810,9 +810,11 @@ function setBlockFormat(tagName) {
 }
 
 function insertTable() {
-
-    const editor = document.getElementById("content");
-    if (!editor) return;
+    if (!activeEditor){
+        alert("Selecciona un editor antes de insertar la tabla.");
+        return
+    };
+    const editor = activeEditor;
     editor.focus();
 
     const rows = 2;
