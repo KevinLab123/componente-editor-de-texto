@@ -649,10 +649,13 @@ function saveAsPDF(value) {
 
 function openButtonModal() {
 
-    const editor = document.getElementById("content");
-    if (!editor) return;
-
+    if (!activeEditor){
+        alert("Selecciona un editor antes de insertar el botón.");
+        return
+    };
+    const editor = activeEditor;
     editor.focus();
+
 
     const sel = window.getSelection();
 
@@ -664,9 +667,12 @@ function openButtonModal() {
 }
 
 function insertButton() {
-
-    const editor = document.getElementById("content");
-    if (!editor) return;
+    if (!activeEditor){
+        alert("Selecciona un editor antes de insertar el botón.");
+        return
+    };
+    const editor = activeEditor;
+    editor.focus();
 
     /* ===== valores desde el card/modal ===== */
 
@@ -704,6 +710,7 @@ function insertButton() {
         savedRange.collapse(true);
         sel.removeAllRanges();
         sel.addRange(savedRange);
+        saveState();
 
     } else if (sel && sel.rangeCount > 0) {
 
@@ -718,11 +725,12 @@ function insertButton() {
         range.collapse(true);
         sel.removeAllRanges();
         sel.addRange(range);
-
+        saveState();
     } else {
 
         editor.appendChild(btn);
         editor.appendChild(document.createTextNode('\u00A0'));
+        saveState();
     }
 
     /* ===== limpiar y cerrar ===== */
@@ -914,11 +922,6 @@ function insertTable() {
     }
 }
 
-
-
-
-
-
 function insertImageBase64() {
 
     if (!activeEditor) {
@@ -1020,7 +1023,7 @@ function insertImageBase64() {
 
                         const range = sel.getRangeAt(0);
 
-                        // 🔥 Validar que el rango pertenece al editor activo
+                        //  Validar que el rango pertenece al editor activo
                         const container = range.commonAncestorContainer;
                         const parentEditor = container.nodeType === 3
                             ? container.parentNode.closest(".editor-section")
