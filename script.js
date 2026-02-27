@@ -130,40 +130,62 @@ function italic() {
 }
 
 function strikethrough() {
+
+    if (!activeEditor){
+        alert("Selecciona un editor antes de aplicar formato.");
+        return;
+    }
+
+    const editor = activeEditor;
+    editor.focus();
+
     const sel = window.getSelection();
-    if (!sel.rangeCount) return;
+    if (!sel.rangeCount || sel.isCollapsed) return;
 
     const range = sel.getRangeAt(0);
+
     const parent = range.commonAncestorContainer.nodeType === 3 
         ? range.commonAncestorContainer.parentElement 
         : range.commonAncestorContainer;
 
     const sElement = parent.closest('s, strike, del');
+
+    // ===== SI YA ESTÁ TACHADO → QUITAR =====
     if (sElement) {
-        sElement.replaceWith(...sElement.childNodes); 
-    } else {
+        sElement.replaceWith(...sElement.childNodes);
+    } 
+    // ===== SI NO ESTÁ TACHADO → APLICAR =====
+    else {
+
         const fragment = range.extractContents();
 
-        // 1. Eliminar etiquetas de tachado internas para evitar duplicados
+        // Eliminar tachados internos
         const nestedS = fragment.querySelectorAll('s, strike, del');
         nestedS.forEach(el => el.replaceWith(...el.childNodes));
 
-        // 2. Limpiar estilos inline de line-through
+        // Limpiar estilos inline
         const styledElements = fragment.querySelectorAll('[style*="text-decoration"]');
         styledElements.forEach(el => {
             if (el.style.textDecoration.includes('line-through')) {
-                el.style.textDecoration = el.style.textDecoration.replace('line-through', '').trim();
+                el.style.textDecoration = '';
             }
-            if (el.getAttribute('style') === '') el.removeAttribute('style');
+            if (el.getAttribute('style') === '') {
+                el.removeAttribute('style');
+            }
         });
 
         const s = document.createElement('s');
         s.appendChild(fragment);
         range.insertNode(s);
+
+        // Reposicionar cursor
+        range.setStartAfter(s);
+        range.collapse(true);
+        sel.removeAllRanges();
+        sel.addRange(range);
     }
-    sel.removeAllRanges();
-    setFontFamily(currentFont);
-    commitChange(); // Guardar estado después de aplicar formato
+
+    commitChange();
 }
 
 function alignText(mode) {
@@ -221,13 +243,131 @@ function setFontFamily(font) {
     });
 }
 
-function addLink(){
-    const url = prompt("Enter the link URL:");
-    if(url){
-        document.execCommand("createLink", false, url);
-        updateInteractiveListeners();
-        setFontFamily(currentFont)
+function addLink() {
+    if (!activeEditor) return;
+    const sel = window.getSelection();
+    if (!sel.rangeCount || sel.isCollapsed) {
+        alert("Selecciona el texto que deseas enlazar.");
+        return;
     }
+
+    const range = sel.getRangeAt(0);
+    const parent = range.commonAncestorContainer.nodeType === 3
+        ? range.commonAncestorContainer.parentElement
+        : range.commonAncestorContainer;
+
+    //  Si ya está dentro de un enlace → no hacer nada
+    if (parent.closest("a")) {
+        alert("La selección ya está enlazada.");
+        return;
+    }
+
+    let url = prompt("Ingresa la URL o correo:");
+    if (!url) return;
+
+    url = url.trim();
+
+    if (url.includes("@") && !url.startsWith("mailto:")) {
+        url = "mailto:" + url;
+    }
+
+    if (!url.startsWith("http") && !url.startsWith("mailto:")) {
+        url = "https://" + url;
+    }
+
+    const content = range.extractContents();
+    const a = document.createElement("a");
+    a.href = url;
+    a.target = "_blank";
+    a.rel = "noopener noreferrer";
+    a.appendChild(content);
+    range.insertNode(a);
+    sel.removeAllRanges();
+    saveState();
+}
+
+document.querySelectorAll(".editor-section").forEach(editor => {
+    editor.addEventListener("input", updatePreview);
+});
+
+function buildCleanSection(editorId) {
+
+    const original = document.getElementById(editorId);
+    const clone = original.cloneNode(true);
+
+    clone.removeAttribute("contenteditable");
+    clone.classList.remove("editor-section");
+
+    //  1. Eliminar todo lo marcado para ignorar
+    clone.querySelectorAll("[data-html2canvas-ignore]").forEach(el => el.remove());
+
+    clone.querySelectorAll(
+        ".image-controls-top, .image-controls-bottom, .resize-handle, " +
+        ".table-controls-top, .image-clear-fix, .no-print, .no-pdf"
+    ).forEach(el => el.remove());
+
+    //  2. LIMPIAR IMÁGENES PERO RESPETAR ALINEACIÓN
+    clone.querySelectorAll(".image-wrapper").forEach(wrapper => {
+
+        const img = wrapper.querySelector("img");
+        if (!img) return;
+
+        let alignmentClass = "pdf-align-center";
+
+        if (wrapper.classList.contains("align-left")) {
+            alignmentClass = "pdf-align-left";
+        }
+        else if (wrapper.classList.contains("align-right")) {
+            alignmentClass = "pdf-align-right";
+        }
+
+        const cleanContainer = document.createElement("div");
+        cleanContainer.className = "pdf-image-container " + alignmentClass;
+
+        cleanContainer.appendChild(img.cloneNode(true));
+
+        wrapper.replaceWith(cleanContainer);
+    });
+
+    //  3. LIMPIAR TABLAS
+    clone.querySelectorAll(".table-wrapper").forEach(wrapper => {
+
+        const table = wrapper.querySelector("table");
+        if (!table) return;
+
+        const cleanTable = table.cloneNode(true);
+        wrapper.replaceWith(cleanTable);
+    });
+
+    return clone;
+}
+
+function updatePreview() {
+
+    const preview = document.getElementById("pdf-preview");
+    preview.innerHTML = "";
+
+    const header = buildCleanSection("header-editor");
+    const body   = buildCleanSection("body-editor");
+    const footer = buildCleanSection("footer-editor");
+
+    const documentWrapper = document.createElement("div");
+    documentWrapper.className = "pdf-document";
+
+    const headerContainer = document.createElement("div");
+    headerContainer.className = "pdf-header";
+    headerContainer.appendChild(header);
+
+    const bodyContainer = document.createElement("div");
+    bodyContainer.className = "pdf-content";
+    bodyContainer.appendChild(body);
+
+    const footerContainer = document.createElement("div");
+    footerContainer.className = "pdf-footer";
+    footerContainer.appendChild(footer);
+
+    documentWrapper.append(headerContainer, bodyContainer, footerContainer);
+    preview.appendChild(documentWrapper);
 }
 
 const headerEditor = document.getElementById('header-editor');
@@ -634,20 +774,65 @@ function updateInteractiveListeners() {
 }
 
 
-function saveAsPDF(value) {
-    if(value === 'new'){
-        content.innerHTML = '';
-        filename.value = 'untitled';
-    }else if(value === 'pdf'){
-        const opt = {
-            margin: 10,
-            filename: filename.value + '.pdf',
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2 },
-            jsPDF: { orientation: 'portrait', unit: 'mm', format: 'a4' }
+function saveAsPDF(action) {
+
+    if (action === "pdf") {
+
+        const preview = document.getElementById("pdf-preview");
+        const filenameInput = document.getElementById("filename").value.trim();
+
+        const filename = filenameInput !== "" 
+            ? filenameInput 
+            : "Sin-nombre";
+
+        const options = {
+            margin: 0,
+            filename: filename + ".pdf",
+            image: { type: "jpeg", quality: 0.98 },
+            html2canvas: { 
+                scale: 2,
+                useCORS: true
+            },
+            jsPDF: { 
+                unit: "mm",
+                format: "a4",
+                orientation: "portrait"
+            }
         };
-        html2pdf().set(opt).from(content).save();
+
+        html2pdf()
+            .set(options)
+            .from(preview)
+            .save();
     }
+
+    if (action === "new") {
+        document.querySelectorAll(".editor-section").forEach(e => e.innerHTML = "");
+        document.getElementById("pdf-preview").innerHTML = "";
+    }
+
+    if (action === "save") {
+        saveTemplate();
+    }
+}
+
+function generatePDF() {
+
+    updatePreview(); // asegurarse de que esté actualizado
+
+    const element = document.getElementById("pdf-preview");
+
+    const filename = document.getElementById("filename").value || "documento";
+
+    const opt = {
+        margin:       0,
+        filename:     filename + ".pdf",
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2 },
+        jsPDF:        { unit: 'px', format: 'a4', orientation: 'portrait' }
+    };
+
+    html2pdf().set(opt).from(element).save();
 }
 
 function openButtonModal() {

@@ -7,6 +7,69 @@
     font-family: 'Roboto', sans-serif;
 }
 
+.pdf-image-container {
+    margin: 20px 0;
+}
+
+.pdf-align-left {
+    text-align: left;
+}
+
+.pdf-align-center {
+    text-align: center;
+}
+
+.pdf-align-right {
+    text-align: right;
+}
+
+.pdf-image-container img {
+    max-width: 100%;
+    height: auto;
+}
+
+.pdf-preview {
+    overflow: hidden;
+}
+
+.pdf-preview table {
+    width: 100%;
+    table-layout: fixed;
+}
+
+.pdf-preview th,
+.pdf-preview td {
+    min-width: 0;
+    word-break: break-word;
+    font-size: 11px;
+}
+
+/* Evita que imágenes dentro de tablas rompan el layout */
+.pdf-preview table img {
+    max-width: 100%;
+    height: auto;
+}
+
+
+
+.pdf-preview-area {
+    width: 794px;        /* A4 ancho en px */
+    min-height: 1123px;  /* A4 alto */
+    margin: auto;
+    background: white;
+    padding: 60px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.2);
+    box-sizing: border-box;
+}
+
+.sticky-toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 1050; /* Más alto que las cards */
+    background: #fff;
+    padding-top: 10px;
+}
+
 html,
 body {
     height: 100%;

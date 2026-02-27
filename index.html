@@ -21,7 +21,7 @@
 <div class="container-fluid py-3">
 
     <!-- HEADER SUPERIOR -->
-    <div class="row mb-3">
+    <div class="row mb-3 sticky-toolbar">
         <div class="col">
             <div class="card shadow-sm">
                 <div class="card-body d-flex gap-3 align-items-center flex-wrap">
@@ -134,6 +134,10 @@
                             <button class="btn btn-outline-secondary" onclick="underline()">
                                 <i class="bi bi-type-underline"></i>
                             </button>
+                             <button class="btn btn-outline-secondary" onclick="strikethrough()">
+                                <i class="bi bi-type-strikethrough"></i>
+                            </button>
+                            </button>
                         </div>
 
                         <div class="btn-group">
@@ -163,6 +167,9 @@
                             </button>
                             <button class="btn btn-outline-secondary" onclick="insertTable()">
                                 <i class="bi bi-table"></i>
+                            </button>
+                            <button class="btn btn-outline-primary" onclick="addLink()">
+                                <i class="bi bi-link-45deg"></i>
                             </button>
                             <button class="btn btn-outline-primary" onclick="openButtonModal()">
                                 <i class="bi bi-node-plus"></i>
@@ -221,6 +228,9 @@
                             <button class="btn btn-outline-secondary" onclick="underline()">
                                 <i class="bi bi-type-underline"></i>
                             </button>
+                             <button class="btn btn-outline-secondary" onclick="strikethrough()">
+                                <i class="bi bi-type-strikethrough"></i>
+                            </button>
                         </div>
 
                         <div class="btn-group">
@@ -250,6 +260,9 @@
                             </button>
                             <button class="btn btn-outline-secondary" onclick="insertTable()">
                                 <i class="bi bi-table"></i>
+                            </button>
+                            <button class="btn btn-outline-primary" onclick="addLink()">
+                                <i class="bi bi-link-45deg"></i>
                             </button>
                             <button class="btn btn-outline-primary" onclick="openButtonModal()">
                                 <i class="bi bi-node-plus"></i>
@@ -308,6 +321,9 @@
                             <button class="btn btn-outline-secondary" onclick="underline()">
                                 <i class="bi bi-type-underline"></i>
                             </button>
+                             <button class="btn btn-outline-secondary" onclick="strikethrough()">
+                                <i class="bi bi-type-strikethrough"></i>
+                            </button>
                         </div>
 
                         <div class="btn-group">
@@ -338,6 +354,9 @@
                             <button class="btn btn-outline-secondary" onclick="insertTable()">
                                 <i class="bi bi-table"></i>
                             </button>
+                             <button class="btn btn-outline-primary" onclick="addLink()">
+                                <i class="bi bi-link-45deg"></i>
+                            </button>
                             <button class="btn btn-outline-primary" onclick="openButtonModal()">
                                 <i class="bi bi-node-plus"></i>
                             </button>
@@ -360,6 +379,24 @@
 
     </div>
 
+</div>
+
+<!-- PREVISUALIZADOR -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card shadow-lg">
+            <div class="card-header bg-dark text-white fw-semibold">
+                Previsualización PDF
+            </div>
+            <div class="card-body bg-light">
+
+                <div id="pdf-preview" class="pdf-preview-area">
+                    <!-- Aquí se inyectará el contenido combinado -->
+                </div>
+
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- Modal -->
