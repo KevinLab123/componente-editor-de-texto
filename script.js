@@ -1,5 +1,9 @@
 function formatDoc(cmd, value=null) {
-    const editor = document.getElementById("content"); 
+    if (!activeEditor){
+        alert("Selecciona un editor antes de insertar la tabla.");
+        return
+    };
+    const editor = activeEditor;
     editor.focus();
     if(value){
         document.execCommand(cmd, false, value);
@@ -206,15 +210,14 @@ function alignText(mode) {
 }
 
 function setFontFamily(font) {
-  const editor = document.getElementById('content');
-    if (!editor) return;
-    currentFont = font;
-    editor.style.fontFamily = font; // Cubre texto base y párrafos
 
-    const allDescendants = editor.querySelectorAll('*');
-    allDescendants.forEach(el => {
-        el.style.fontFamily = 'inherit'; // Fuerza a listas y tablas a seguir al padre
-        if (el.getAttribute('style') === '') el.removeAttribute('style');
+    currentFont = font;
+
+    // Selecciona los 3 editores por clase
+    const editors = document.querySelectorAll('.editor-section');
+
+    editors.forEach(editor => {
+        editor.style.fontFamily = font;
     });
 }
 
@@ -770,29 +773,50 @@ function toggleList(type) {
 }
 
 function setFontSize(size) {
+
+    if (!activeEditor){
+        alert("Selecciona un editor antes de cambiar el tamaño de fuente.");
+        return;
+    }
+
+    const editor = activeEditor;
+    editor.focus();
+
     const sel = window.getSelection();
     if (!sel.rangeCount || sel.isCollapsed) return;
 
     const range = sel.getRangeAt(0);
     const span = document.createElement('span');
-    
-    // Aplicamos el tamaño (ej: '16px', '20px', '1.2em')
-    span.style.fontSize = size; 
+
+    span.style.fontSize = size;
 
     try {
-        // Extraemos el contenido seleccionado y lo insertamos en el span
         span.appendChild(range.extractContents());
         range.insertNode(span);
+
+        // Colocar cursor después del span
+        range.setStartAfter(span);
+        range.collapse(true);
+        sel.removeAllRanges();
+        sel.addRange(range);
+        saveState();
     } catch (e) {
         console.error("Error al cambiar el tamaño de fuente:", e);
     }
 
-    sel.removeAllRanges();
-    setFontFamily(currentFont)
+    // Solo si existe esta función
+    if (typeof setFontFamily === "function") {
+        setFontFamily(currentFont);
+    }
 }
 
 function setBlockFormat(tagName) {
-    const editor = document.getElementById('content');
+ if (!activeEditor){
+        alert("Selecciona un editor antes de insertar el botón.");
+        return
+    };
+    const editor = activeEditor;
+    editor.focus();
     const sel = window.getSelection();
     if (!sel.rangeCount || !editor) return;
 
@@ -810,9 +834,11 @@ function setBlockFormat(tagName) {
     if (closestBlock) {
         newBlock.innerHTML = closestBlock.innerHTML;
         closestBlock.replaceWith(newBlock);
+        saveState();
     } else {
         newBlock.appendChild(range.extractContents());
         range.insertNode(newBlock);
+        saveState();
     }
     sel.removeAllRanges();
 }
@@ -1096,7 +1122,12 @@ async function saveContent() {
 }
 
 function clearFormattingToParagraph() {
-    const editor = document.getElementById('content');
+    if (!activeEditor){
+        alert("Selecciona un editor antes de insertar la tabla.");
+        return
+    };
+    const editor = activeEditor;
+    editor.focus();
     const sel = window.getSelection();
     if (!sel.rangeCount || !editor) return;
 
