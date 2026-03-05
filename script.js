@@ -1241,6 +1241,150 @@ function insertHeaderImage() {
     input.click();
 }
 
+function insertImageBase64() {
+
+    if (!activeEditor) {
+        alert("Selecciona un editor antes de insertar la imagen.");
+        return;
+    }
+
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+
+    input.onchange = function () {
+
+        const file = input.files[0];
+        if (!file) return;
+
+        new Compressor(file, {
+            quality: 0.5,
+            maxWidth: 1024,
+
+            success(result) {
+
+                const reader = new FileReader();
+
+                console.log("Tamaño original:", (file.size / 1024).toFixed(2), "KB");
+                console.log("Tamaño comprimido:", (result.size / 1024).toFixed(2), "KB");
+
+                reader.onload = function (e) {
+
+                    // --- WRAPPER PRINCIPAL ---
+                    const wrapper = document.createElement("div");
+                    wrapper.className = "image-wrapper align-center";
+                    wrapper.setAttribute("contenteditable", "false");
+
+                    // --- CONTROLES SUPERIORES ---
+                    const controlsTop = document.createElement("div");
+                    controlsTop.className = "image-controls-top";
+                    controlsTop.setAttribute("data-html2canvas-ignore", "true");
+
+                    const btnLeft = document.createElement("button");
+                    btnLeft.textContent = "Izquierda";
+                    btnLeft.className = "image-control-align btn-img-left";
+
+                    const btnCenter = document.createElement("button");
+                    btnCenter.textContent = "Centro";
+                    btnCenter.className = "image-control-align btn-img-center";
+
+                    const btnRight = document.createElement("button");
+                    btnRight.textContent = "Derecha";
+                    btnRight.className = "image-control-align btn-img-right";
+
+                    controlsTop.append(btnLeft, btnCenter, btnRight);
+
+                    // --- CONTENEDOR IMAGEN ---
+                    const imgContainer = document.createElement("div");
+                    imgContainer.className = "img-container";
+
+                    const img = document.createElement("img");
+                    img.src = e.target.result;
+
+                    imgContainer.appendChild(img);
+
+                    // --- CONTROLES INFERIORES ---
+                    const controlsBottom = document.createElement("div");
+                    controlsBottom.className = "image-controls-bottom";
+                    controlsBottom.setAttribute("data-html2canvas-ignore", "true");
+
+                    const deleteBtn = document.createElement("button");
+                    deleteBtn.textContent = "Eliminar imagen";
+                    deleteBtn.className = "image-control-delete";
+
+                    controlsBottom.appendChild(deleteBtn);
+
+                    // --- HANDLES RESIZE ---
+                    ["top-left", "top-right", "bottom-left", "bottom-right"].forEach(pos => {
+                        const handle = document.createElement("div");
+                        handle.className = "resize-handle " + pos;
+                        handle.setAttribute("data-html2canvas-ignore", "true");
+                        imgContainer.appendChild(handle);
+                    });
+
+                    wrapper.append(controlsTop, imgContainer, controlsBottom);
+
+                    // --- ESPACIADO ---
+                    const clearDiv = document.createElement("div");
+                    clearDiv.className = "image-clear-fix";
+                    clearDiv.setAttribute("contenteditable", "false");
+
+                    const spaceAbove = document.createElement("p");
+                    spaceAbove.innerHTML = "<br>";
+
+                    const spaceBelow = document.createElement("p");
+                    spaceBelow.innerHTML = "<br>";
+
+                    // --- INSERTAR EN EL EDITOR ACTIVO ---
+                    const sel = window.getSelection();
+
+                    if (sel && sel.rangeCount > 0) {
+
+                        const range = sel.getRangeAt(0);
+
+                        //  Validar que el rango pertenece al editor activo
+                        const container = range.commonAncestorContainer;
+                        const parentEditor = container.nodeType === 3
+                            ? container.parentNode.closest(".editor-section")
+                            : container.closest(".editor-section");
+
+                        if (parentEditor !== activeEditor) {
+                            activeEditor.append(spaceAbove, wrapper, clearDiv, spaceBelow);
+                        } else {
+
+                            range.deleteContents();
+
+                            range.insertNode(spaceAbove);
+                            spaceAbove.after(wrapper);
+                            wrapper.after(clearDiv);
+                            clearDiv.after(spaceBelow);
+
+                            range.setStart(spaceBelow, 0);
+                            range.collapse(true);
+
+                            sel.removeAllRanges();
+                            sel.addRange(range);
+                        }
+
+                    } else {
+                        activeEditor.append(spaceAbove, wrapper, clearDiv, spaceBelow);
+                    }
+
+                    saveState();
+                };
+
+                reader.readAsDataURL(result);
+            },
+
+            error(err) {
+                console.error("Error al comprimir imagen:", err);
+            }
+        });
+    };
+
+    input.click();
+}
+
 async function saveContent() {
     const editorContent = document.getElementById('content').innerHTML;
     const url = 'http://localhost:3000/documents';
