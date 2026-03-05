@@ -518,30 +518,104 @@ document.addEventListener("click", function (e) {
             return null;
         }
 
-        if (target.classList.contains("btn-add-row")) {
-            const tr = document.createElement("tr");
-            const colCount = table.rows[0].cells.length;
+     if (target.classList.contains("btn-add-row")) {
 
-            for (let i = 0; i < colCount; i++) {
+    const matrix = buildTableMatrix(table);
+
+    if (!matrix.length) return;
+
+    const totalCols = matrix[0].length;
+    const lastRowIndex = matrix.length - 1;
+
+    const newRow = table.insertRow();
+
+    for (let c = 0; c < totalCols; c++) {
+
+        const cellAbove = matrix[lastRowIndex][c];
+
+        if (!cellAbove) continue;
+
+        const rowspan = parseInt(cellAbove.getAttribute("rowspan")) || 1;
+
+        // Si la celda viene extendida hacia abajo
+        if (cellAbove.parentElement.rowIndex !== lastRowIndex) {
+
+            cellAbove.setAttribute("rowspan", rowspan + 1);
+
+        } else {
+
+            const td = document.createElement("td");
+            td.contentEditable = "true";
+            td.textContent = "Celda";
+            td.style.fontFamily = table.style.fontFamily;
+
+            td.setAttribute("colspan", "1");
+            td.setAttribute("rowspan", "1");
+
+            newRow.appendChild(td);
+        }
+    }
+
+    saveState();
+}
+
+if (target.classList.contains("btn-add-col")) {
+
+    const matrix = buildTableMatrix(table);
+
+    if (!matrix.length || !matrix[0].length) return;
+
+    const totalRows = matrix.length;
+    const insertIndex = matrix[0].length; // insertar al final
+
+    for (let r = 0; r < totalRows; r++) {
+
+        const row = table.rows[r];
+
+        // Última celda visible en esa fila
+        const lastCell = matrix[r][insertIndex - 1];
+
+        //  Si por alguna razón no existe, crear celda normal
+        if (!lastCell) {
+
+            const td = document.createElement("td");
+            td.contentEditable = "true";
+            td.textContent = "Celda";
+            td.setAttribute("colspan", "1");
+            td.setAttribute("rowspan", "1");
+
+            row.appendChild(td);
+            continue;
+        }
+
+        const colspan = parseInt(lastCell.getAttribute("colspan")) || 1;
+
+        // Verificar si la celda realmente pertenece a esta fila
+        if (lastCell.parentElement === row) {
+
+            // Si ocupa múltiples columnas → extender
+            if (colspan > 1) {
+                lastCell.setAttribute("colspan", colspan + 1);
+            } else {
+
                 const td = document.createElement("td");
                 td.contentEditable = "true";
                 td.textContent = "Celda";
-                tr.appendChild(td);
+                td.setAttribute("colspan", "1");
+                td.setAttribute("rowspan", "1");
+
+                row.appendChild(td);
             }
 
-            table.appendChild(tr);
-            saveState();
-        }
+        } else {
 
-        if (target.classList.contains("btn-add-col")) {
-            Array.from(table.rows).forEach(row => {
-                const td = document.createElement("td");
-                td.contentEditable = "true";
-                td.textContent = "Celda";
-                row.appendChild(td);
-            });
-            saveState();
+            // Si la celda viene de arriba (rowspan) → extender horizontalmente
+            lastCell.setAttribute("colspan", colspan + 1);
         }
+    }
+
+    saveState();
+}
 
         if (target.classList.contains("btn-delete-row")) {
             const cell = getCurrentCell();
@@ -550,13 +624,49 @@ document.addEventListener("click", function (e) {
             saveState();
         }
 
-        if (target.classList.contains("btn-delete-col")) {
-            const cell = getCurrentCell();
-            if (!cell || table.rows[0].cells.length <= 1) return;
-            const index = cell.cellIndex;
-            Array.from(table.rows).forEach(row => row.deleteCell(index));
-            saveState();
+      if (target.classList.contains("btn-delete-col")) {
+
+    const cell = getCurrentCell();
+    if (!cell) return;
+
+    const matrix = buildTableMatrix(table);
+    if (!matrix.length) return;
+
+    const rowIndex = cell.parentElement.rowIndex;
+    const colIndex = matrix[rowIndex].indexOf(cell);
+
+    if (colIndex === -1) return;
+
+    const totalRows = matrix.length;
+    const totalCols = matrix[0].length;
+
+    // No permitir eliminar si es la última columna real
+    if (totalCols <= 1) return;
+
+    for (let r = 0; r < totalRows; r++) {
+
+        const targetCell = matrix[r][colIndex];
+
+        if (!targetCell) continue;
+
+        const colspan = parseInt(targetCell.getAttribute("colspan")) || 1;
+
+        // Si la celda ocupa varias columnas → reducir colspan
+        if (colspan > 1) {
+
+            targetCell.setAttribute("colspan", colspan - 1);
+
+        } else {
+
+            // Solo eliminar si pertenece realmente a esa fila
+            if (targetCell.parentElement.rowIndex === r) {
+                targetCell.remove();
+            }
         }
+    }
+
+    saveState();
+}
 
         if (target.classList.contains("btn-delete-table")) {
             tableWrapper.remove();
@@ -1052,11 +1162,132 @@ function setBlockFormat(tagName) {
     sel.removeAllRanges();
 }
 
+function getSelectedCell() {
+    const selection = window.getSelection();
+    if (!selection.rangeCount) return null;
+
+    let node = selection.getRangeAt(0).startContainer;
+
+    while (node && node.nodeName !== "TD") {
+        node = node.parentNode;
+    }
+
+    return node;
+}
+
+function mergeRight() {
+
+    const td = getSelectedCell();
+    if (!td) {
+        alert("Selecciona una celda primero.");
+        return;
+    }
+
+    const tr = td.parentElement;
+    const table = tr.closest("table");
+
+    const matrix = buildTableMatrix(table);
+
+    const rowIndex = tr.rowIndex;
+
+    // Total real de columnas de la tabla
+    const totalColumns = matrix[0].length;
+
+    // Obtener todas las celdas reales de esa fila
+    const realCells = Array.from(tr.children);
+
+    // Eliminar todas menos la seleccionada
+    realCells.forEach(cell => {
+        if (cell !== td) {
+            cell.remove();
+        }
+    });
+
+    // Expandir la celda seleccionada
+    td.setAttribute("colspan", totalColumns);
+    saveState();
+}
+
+function buildTableMatrix(table) {
+    const matrix = [];
+
+    for (let r = 0; r < table.rows.length; r++) {
+        const row = table.rows[r];
+        matrix[r] = [];
+        let colIndex = 0;
+
+        for (let cell of row.cells) {
+            while (matrix[r][colIndex]) colIndex++;
+
+            const rowspan = parseInt(cell.getAttribute("rowspan")) || 1;
+            const colspan = parseInt(cell.getAttribute("colspan")) || 1;
+
+            for (let i = 0; i < rowspan; i++) {
+                for (let j = 0; j < colspan; j++) {
+                    if (!matrix[r + i]) matrix[r + i] = [];
+                    matrix[r + i][colIndex + j] = cell;
+                }
+            }
+
+            colIndex += colspan;
+        }
+    }
+
+    return matrix;
+}
+
+document.addEventListener("click", function (e) {
+
+    if (e.target.classList.contains("btn-merge-right")) {
+        mergeRight();
+    }
+
+});
+
+function addColumn(table) {
+
+    const matrix = buildTableMatrix(table);
+
+    const totalRows = matrix.length;
+    const insertIndex = matrix[0].length; // insertar al final
+
+    for (let r = 0; r < totalRows; r++) {
+
+        const row = table.rows[r];
+
+        const cellBeforeInsert = matrix[r][insertIndex - 1];
+
+        const colspan = parseInt(cellBeforeInsert.getAttribute("colspan")) || 1;
+        const realIndex = matrix[r].indexOf(cellBeforeInsert);
+
+        // Si la celda cubre la nueva posición → extender colspan
+        if (realIndex + colspan > insertIndex - 1) {
+
+            cellBeforeInsert.setAttribute("colspan", colspan + 1);
+
+        } else {
+
+            const td = document.createElement("td");
+            td.contentEditable = "true";
+            td.textContent = "Nueva celda";
+            td.style.fontFamily = table.style.fontFamily;
+
+            td.setAttribute("colspan", "1");
+            td.setAttribute("rowspan", "1");
+
+            row.appendChild(td);
+        }
+    }
+
+    saveState();
+}
+
 function insertTable() {
     if (!activeEditor){
         alert("Selecciona un editor antes de insertar la tabla.");
-        return
+        return;
     };
+
     const editor = activeEditor;
     editor.focus();
 
@@ -1090,6 +1321,10 @@ function insertTable() {
     deleteColBtn.textContent = "Eliminar columna";
     deleteColBtn.className = "table-control-delete btn-delete-col";
 
+    const mergeRightBtn = document.createElement("button");
+    mergeRightBtn.textContent = "Combinar →";
+    mergeRightBtn.className = "table-control btn-merge-right";
+
     const deleteBtn = document.createElement("button");
     deleteBtn.textContent = "Eliminar tabla";
     deleteBtn.className = "table-control-delete-table btn-delete-table";
@@ -1099,6 +1334,7 @@ function insertTable() {
         addRowBtn,
         deleteRowBtn,
         deleteColBtn,
+        mergeRightBtn,
         deleteBtn
     ].forEach(btn => {
         btn.setAttribute("contenteditable", "false");
@@ -1118,6 +1354,11 @@ function insertTable() {
             td.textContent = "Celda";
             td.contentEditable = "true";
             td.style.fontFamily = currentFont;
+
+            // Inicializar explícitamente colspan y rowspan
+            td.setAttribute("colspan", "1");
+            td.setAttribute("rowspan", "1");
+
             tr.appendChild(td);
         }
 
