@@ -17,6 +17,33 @@ const filename = document.getElementById('filename');
 let savedRange = null;
 let buttonModal = null;
 
+const pageFormats = {
+    A4: {
+        width: 794,
+        height: 1123
+    },
+    LETTER: {
+        width: 816,
+        height: 1056
+    },
+    LEGAL: {
+        width: 816,
+        height: 1344
+    }
+};
+
+function setPageFormat(format) {
+
+    const preview = document.getElementById("pdf-preview");
+    const page = pageFormats[format];
+
+    if (!page) return;
+
+    preview.style.width = page.width + "px";
+    preview.style.minHeight = page.height + "px";
+
+}
+
 function bold() {
     const sel = window.getSelection();
     if (!sel.rangeCount) return;
@@ -595,6 +622,8 @@ function saveAsPDF(action) {
             ? filenameInput 
             : "Sin-nombre";
 
+            
+
         const options = {
             margin: 0,
             filename: filename + ".pdf",
@@ -604,9 +633,9 @@ function saveAsPDF(action) {
                 useCORS: true
             },
             jsPDF: { 
-                unit: "mm",
-                format: "a4",
-                orientation: "portrait"
+            unit: "px",
+            format: [preview.offsetWidth, preview.offsetHeight],
+            orientation: "portrait"
             }
         };
 
@@ -626,24 +655,7 @@ function saveAsPDF(action) {
     }
 }
 
-function generatePDF() {
 
-    updatePreview(); // asegurarse de que esté actualizado
-
-    const element = document.getElementById("pdf-preview");
-
-    const filename = document.getElementById("filename").value || "documento";
-
-    const opt = {
-        margin:       0,
-        filename:     filename + ".pdf",
-        image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2 },
-        jsPDF:        { unit: 'px', format: 'a4', orientation: 'portrait' }
-    };
-
-    html2pdf().set(opt).from(element).save();
-}
 
 function openButtonModal() {
 
@@ -1468,9 +1480,6 @@ document.addEventListener("mouseup", function(){
     }
 
 });
-
-
-
 
 document.addEventListener("click", function (e) {
 

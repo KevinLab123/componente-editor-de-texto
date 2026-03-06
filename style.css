@@ -111,8 +111,6 @@
 
 
 .pdf-preview-area {
-    width: 794px;        /* A4 ancho en px */
-    min-height: 1123px;  /* A4 alto */
     margin: auto;
     background: white;
     padding: 60px;

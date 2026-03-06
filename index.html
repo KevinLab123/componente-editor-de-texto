@@ -72,6 +72,13 @@
                             <option value="18px">Grande</option>
                             <option value="24px">Extra Grande</option>
                         </select>
+                        <!-- Página -->
+                        <select class="form-select w-auto" onchange="setPageFormat(this.value); this.selectedIndex=0;">
+                            <option hidden selected>Página</option>
+                            <option value="A4">A4 (21×29.7 cm)</option>
+                            <option value="LETTER">Carta (21.59×27.94 cm)</option>
+                            <option value="LEGAL">Oficio (21.59×35.56 cm)</option>
+                        </select>
                         <!-- Color texto -->
                         <input type="color" class="form-control form-control-color"
                             oninput="formatDoc('foreColor',this.value)">
