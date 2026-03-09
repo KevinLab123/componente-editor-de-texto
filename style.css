@@ -7,6 +7,37 @@
     font-family: 'Roboto', sans-serif;
 }
 
+/* Página tipo A4 */
+
+.document-page {
+
+width: 21cm;
+min-height: 29.7cm;
+
+}
+
+[contenteditable="true"] {
+cursor: text;
+}
+/* Área editable */
+
+.document-body {
+
+min-height: 500px;
+outline: none;
+
+}
+
+
+/* Mejor experiencia al editar */
+
+.document-body:focus {
+
+outline: none;
+
+}
+
+
 .doc-header-table {
     width: 100%;
     border-collapse: collapse;

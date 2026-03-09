@@ -12,6 +12,8 @@ function formatDoc(cmd, value=null) {
     }
 }
 
+
+
 function handleFileMenu(option) {
 
     switch(option){
@@ -31,6 +33,7 @@ function handleFileMenu(option) {
     }
 
 }
+
 
 let currentFont = 'Arial';
 const filename = document.getElementById('filename');
