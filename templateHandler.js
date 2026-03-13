@@ -711,43 +711,33 @@ function strikethrough() {
 
 function alignText(mode) {
 
-    const selectionData = getEditorSelection();
-    if (!selectionData) return;
+    const selection = window.getSelection();
+    if (!selection.rangeCount) return;
 
-    const { range } = selectionData;
-
+    const range = selection.getRangeAt(0);
     const editor = document.getElementById("doc-body");
 
-    let node = range.startContainer;
+    if (!editor.contains(range.commonAncestorContainer)) return;
 
-    if (node.nodeType === 3) {
-        node = node.parentElement;
-    }
+    const blocks = editor.querySelectorAll('p, h1, h2, h3, h4, h5, h6, li, div');
 
-    if (!editor.contains(node)) return;
+    let changed = false;
 
-    let block = node.closest('p, h1, h2, h3, h4, h5, h6, li');
+    blocks.forEach(block => {
 
-    // Si no existe bloque, crearlo
-    if (!block) {
+        if (range.intersectsNode(block)) {
 
-        const p = document.createElement('p');
-        p.innerHTML = editor.innerHTML;
+            if (block.style.textAlign !== mode) {
+                block.style.textAlign = mode;
+                changed = true;
+            }
 
-        editor.innerHTML = '';
-        editor.appendChild(p);
+        }
 
-        block = p;
-    }
+    });
 
-    const before = editor.innerHTML;
-
-    block.style.textAlign = mode;
-
-    const after = editor.innerHTML;
-
-    if (before !== after) {
-    saveState();
+    if (changed) {
+        saveState();
     }
 
 }
@@ -1108,17 +1098,9 @@ function clearFormattingToParagraph() {
 
     const range = sel.getRangeAt(0);
 
-    // Verificar que la selección esté dentro del editor
     if (!editor.contains(range.commonAncestorContainer)) return;
 
-    let node = range.commonAncestorContainer;
-
-    if (node.nodeType === Node.TEXT_NODE) {
-        node = node.parentNode;
-    }
-
-    const paragraph = node.closest('p, div, li, h1, h2, h3, h4, h5, h6');
-    if (!paragraph || !editor.contains(paragraph)) return;
+    const blocks = editor.querySelectorAll('p, div, li, h1, h2, h3, h4, h5, h6');
 
     // ZONAS PROTEGIDAS
     const protectedSelector = `
@@ -1129,52 +1111,83 @@ function clearFormattingToParagraph() {
         [data-protected]
     `;
 
-    // Si está dentro de zona protegida
-    if (paragraph.closest(protectedSelector)) {
-        console.warn("Zona protegida — no se limpia formato");
-        return;
-    }
+    let changed = false;
 
-    // Etiquetas inline a remover
-    const inlineTags = [
-        'strong','b','em','i','u','s','del','strike',
-        'span','font','mark','small','big','sub','sup'
-    ];
+    blocks.forEach(block => {
 
-    paragraph.querySelectorAll(inlineTags.join(',')).forEach(el => {
+        if (!range.intersectsNode(block)) return;
 
-        if (el.closest(protectedSelector)) return;
-
-        while (el.firstChild) {
-            el.parentNode.insertBefore(el.firstChild, el);
+        if (block.closest(protectedSelector)) {
+            console.warn("Zona protegida — no se limpia formato");
+            return;
         }
 
-        el.remove();
+        // Etiquetas inline a remover
+        const inlineTags = [
+            'strong','b','em','i','u','s','del','strike',
+            'span','font','mark','small','big','sub','sup'
+        ];
+
+        block.querySelectorAll(inlineTags.join(',')).forEach(el => {
+
+            if (el.closest(protectedSelector)) return;
+
+            while (el.firstChild) {
+                el.parentNode.insertBefore(el.firstChild, el);
+            }
+
+            el.remove();
+            changed = true;
+        });
+
+        // Limpiar atributos visuales de elementos internos
+        block.querySelectorAll('*').forEach(el => {
+
+            if (el.closest(protectedSelector)) return;
+
+            if (
+                el.hasAttribute('style') ||
+                el.hasAttribute('class') ||
+                el.hasAttribute('color') ||
+                el.hasAttribute('face') ||
+                el.hasAttribute('size')
+            ) {
+                changed = true;
+            }
+
+            el.removeAttribute('style');
+            el.removeAttribute('class');
+            el.removeAttribute('color');
+            el.removeAttribute('face');
+            el.removeAttribute('size');
+
+        });
+
+        // Limpiar atributos del bloque principal
+        if (
+            block.hasAttribute('style') ||
+            block.hasAttribute('class')
+        ) {
+            changed = true;
+        }
+
+        block.removeAttribute('style');
+        block.removeAttribute('class');
+
     });
 
-    // Limpiar atributos visuales
-    paragraph.querySelectorAll('*').forEach(el => {
+    
 
-        if (el.closest(protectedSelector)) return;
+    if (!changed) return;
 
-        el.removeAttribute('style');
-        el.removeAttribute('class');
-        el.removeAttribute('color');
-        el.removeAttribute('face');
-        el.removeAttribute('size');
-    });
-
-    paragraph.removeAttribute('style');
-    paragraph.removeAttribute('class');
-
-    // Restaurar selección
     sel.removeAllRanges();
 
     const newRange = document.createRange();
-    newRange.selectNodeContents(paragraph);
+    newRange.selectNodeContents(editor);
     newRange.collapse(false);
 
     sel.addRange(newRange);
+
     applyTemplateFont();
     saveState();
 }

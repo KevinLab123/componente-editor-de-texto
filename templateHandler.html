@@ -41,13 +41,25 @@ Cargar Plantilla
 </div>
 </div>
 
-<!-- DOCUMENTO -->
 <div class="d-flex justify-content-center">
 
-<div id="document-container" class="document-page bg-white shadow-sm p-4">
+<div id="document-container" class="document-page">
 
-<!-- HEADER -->
-<div id="doc-header" class="border-bottom pb-2 mb-3"></div>
+<!-- ENCABEZADO -->
+<div class="card shadow-sm mb-3">
+
+<div class="card-header bg-light fw-semibold">
+Encabezado
+</div>
+
+<div class="card-body">
+<div id="doc-header"
+     class="editor-section"
+     contenteditable="true">
+</div>
+</div>
+
+</div>
 
 
 <!-- TOOLBAR DEL EDITOR -->
@@ -135,13 +147,41 @@ Cargar Plantilla
 </div>
 
 
-<!-- BODY EDITABLE -->
-<div id="doc-body" class="document-body" contenteditable="true">
+<!-- CONTENIDO -->
+<div class="card shadow mb-3">
+
+<div class="card-header bg-light fw-semibold">
+Contenido
+</div>
+
+<div class="card-body">
+
+<div id="doc-body"
+     class="editor-section"
+     contenteditable="true">
+</div>
+
+</div>
+
 </div>
 
 
-<!-- FOOTER -->
-<div id="doc-footer" class="border-top pt-2 mt-3"></div>
+<!-- PIE DE PAGINA -->
+<div class="card shadow-sm">
+
+<div class="card-header bg-light fw-semibold">
+Pie de página
+</div>
+
+<div class="card-body">
+
+<div id="doc-footer"
+     class="editor-section footer-section">
+</div>
+
+</div>
+
+</div>
 
 </div>
 
