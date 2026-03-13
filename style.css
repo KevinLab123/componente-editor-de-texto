@@ -354,6 +354,19 @@ p, h1, h2, h3, h4, h5, h6 {
     z-index: 10;
 }
 
+.btn-img-left,
+.btn-img-center,
+.btn-img-right {
+    padding: 4px 8px;
+    margin: 0 2px;
+    cursor: pointer;
+    font-size: 12px;
+    border-radius: 4px;
+    border: 1px solid #0066;
+    background: #e6f0ff;
+    color: #004080;
+}
+
 .image-control-align {
     padding: 4px 8px;
     margin: 0 2px;

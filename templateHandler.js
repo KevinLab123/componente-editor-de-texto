@@ -18,6 +18,435 @@ const pageFormats = {
     }
 };
 
+let isResizing = false;
+let currentHandle = null;
+let currentContainer = null;
+let currentImage = null;
+function insertImageBase64() {
+
+    const editor = document.getElementById("doc-body");
+
+    if (!editor) {
+        alert("No se encontró el editor.");
+        return;
+    }
+
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+
+    input.onchange = function () {
+
+        const file = input.files[0];
+        if (!file) return;
+
+        new Compressor(file, {
+            quality: 0.5,
+            maxWidth: 1024,
+
+            success(result) {
+
+                const reader = new FileReader();
+
+                reader.onload = function (e) {
+
+                    // WRAPPER
+                    const wrapper = document.createElement("div");
+                    wrapper.className = "image-wrapper align-center";
+                    wrapper.setAttribute("contenteditable", "false");
+
+                    // CONTROLES SUPERIORES
+                    const controlsTop = document.createElement("div");
+                    controlsTop.className = "image-controls-top";
+                    controlsTop.setAttribute("data-html2canvas-ignore", "true");
+
+                    const btnLeft = document.createElement("button");
+                    btnLeft.textContent = "Izquierda";
+                    btnLeft.className = "btn-img-left";
+
+                    const btnCenter = document.createElement("button");
+                    btnCenter.textContent = "Centro";
+                    btnCenter.className = "btn-img-center";
+
+                    const btnRight = document.createElement("button");
+                    btnRight.textContent = "Derecha";
+                    btnRight.className = "btn-img-right";
+
+                    controlsTop.append(btnLeft, btnCenter, btnRight);
+
+                    // CONTENEDOR IMAGEN
+                    const imgContainer = document.createElement("div");
+                    imgContainer.className = "img-container";
+
+                    const img = document.createElement("img");
+                    img.src = e.target.result;
+
+                    imgContainer.appendChild(img);
+
+                    // HANDLES RESIZE
+                    ["top-left", "top-right", "bottom-left", "bottom-right"].forEach(pos => {
+
+                        const handle = document.createElement("div");
+
+                        handle.className = "resize-handle " + pos;
+                        handle.setAttribute("data-html2canvas-ignore", "true");
+
+                        imgContainer.appendChild(handle);
+                    });
+
+                    // CONTROLES INFERIORES
+                    const controlsBottom = document.createElement("div");
+                    controlsBottom.className = "image-controls-bottom";
+                    controlsBottom.setAttribute("data-html2canvas-ignore", "true");
+
+                    const deleteBtn = document.createElement("button");
+                    deleteBtn.textContent = "Eliminar imagen";
+                    deleteBtn.className = "image-control-delete";
+
+                    controlsBottom.appendChild(deleteBtn);
+
+                    wrapper.append(controlsTop, imgContainer, controlsBottom);
+
+                    const clearDiv = document.createElement("div");
+                    clearDiv.className = "image-clear-fix";
+                    clearDiv.setAttribute("contenteditable", "false");
+
+                    const spaceAbove = document.createElement("p");
+                    spaceAbove.innerHTML = "<br>";
+
+                    const spaceBelow = document.createElement("p");
+                    spaceBelow.innerHTML = "<br>";
+
+                    const sel = window.getSelection();
+
+                    if (sel && sel.rangeCount > 0) {
+
+                        const range = sel.getRangeAt(0);
+
+                        range.deleteContents();
+
+                        range.insertNode(spaceAbove);
+                        spaceAbove.after(wrapper);
+                        wrapper.after(clearDiv);
+                        clearDiv.after(spaceBelow);
+
+                        range.setStart(spaceBelow, 0);
+                        range.collapse(true);
+
+                        sel.removeAllRanges();
+                        sel.addRange(range);
+
+                    } else {
+
+                        editor.append(spaceAbove, wrapper, clearDiv, spaceBelow);
+
+                    }
+
+                    saveState();
+                };
+
+                reader.readAsDataURL(result);
+                saveState();
+            },
+
+            error(err) {
+                console.error("Error al comprimir imagen:", err);
+            }
+        });
+    };
+
+    input.click();
+}
+
+let historyStack = [];
+let historyIndex = -1;
+function commitChange() {
+
+    const editor = document.getElementById("doc-body");
+    if (!editor) return;
+
+    editor.focus();
+    saveState();
+}
+
+
+
+function saveState() {
+
+    const editor = document.getElementById("doc-body");
+    if (!editor) return;
+
+    let rawHTML = editor.innerHTML.trim();
+
+    // Evitar estados duplicados
+    if (
+        historyStack.length > 0 &&
+        historyStack[historyIndex] === rawHTML
+    ) {
+        return;
+    }
+
+    // Si el usuario hizo undo y luego modifica algo
+    if (historyIndex < historyStack.length - 1) {
+
+        historyStack = historyStack.slice(0, historyIndex + 1);
+
+    }
+
+    historyStack.push(rawHTML);
+    historyIndex = historyStack.length - 1;
+}
+
+function undo() {
+
+    const editor = document.getElementById("doc-body");
+    if (!editor) return;
+
+    if (historyIndex > 0) {
+
+        historyIndex--;
+        editor.innerHTML = historyStack[historyIndex];
+
+    }
+}
+
+function redo() {
+
+    const editor = document.getElementById("doc-body");
+    if (!editor) return;
+
+    if (historyIndex < historyStack.length - 1) {
+
+        historyIndex++;
+        editor.innerHTML = historyStack[historyIndex];
+
+    }
+}
+
+function addLink() {
+
+    const editor = document.getElementById("doc-body");
+    if (!editor) return;
+
+    const sel = window.getSelection();
+
+    if (!sel.rangeCount || sel.isCollapsed) {
+        alert("Selecciona el texto que deseas enlazar.");
+        return;
+    }
+
+    const range = sel.getRangeAt(0);
+
+    // Verificar que la selección esté dentro del editor
+    if (!editor.contains(range.commonAncestorContainer)) {
+        alert("La selección debe estar dentro del documento.");
+        return;
+    }
+
+    const parent = range.commonAncestorContainer.nodeType === 3
+        ? range.commonAncestorContainer.parentElement
+        : range.commonAncestorContainer;
+
+    // Si ya está dentro de un enlace
+    if (parent.closest("a")) {
+        alert("La selección ya está enlazada.");
+        return;
+    }
+
+    let url = prompt("Ingresa la URL o correo:");
+    if (!url) return;
+
+    url = url.trim();
+
+    // Detectar correos
+    if (url.includes("@") && !url.startsWith("mailto:")) {
+        url = "mailto:" + url;
+    }
+
+    // Agregar https si no existe
+    if (!url.startsWith("http") && !url.startsWith("mailto:")) {
+        url = "https://" + url;
+    }
+
+    const content = range.extractContents();
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.target = "_blank";
+    a.rel = "noopener noreferrer";
+
+    a.appendChild(content);
+
+    range.insertNode(a);
+
+    sel.removeAllRanges();
+
+    saveState();
+}
+
+let typingTimer = null;
+const editor = document.getElementById("doc-body");
+
+editor.addEventListener("input", function () {
+
+    // Cancelar temporizador anterior
+    clearTimeout(typingTimer);
+
+    // Guardar estado después de 500ms sin escribir
+    typingTimer = setTimeout(() => {
+        saveState();
+    }, 500);
+
+});
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    const editor = document.getElementById("doc-body");
+
+    if (editor) {
+        historyStack.push(editor.innerHTML);
+        historyIndex = 0;
+    }
+
+});
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    const editor = document.getElementById("doc-body");
+
+    if (editor) {
+
+        historyStack.push(editor.innerHTML);
+        historyIndex = 0;
+
+    }
+
+});
+
+document.addEventListener("click", function (e) {
+
+    const target = e.target;
+    const imageWrapper = target.closest(".image-wrapper");
+
+    if (!imageWrapper) return;
+
+    // Alinear izquierda
+    if (target.classList.contains("btn-img-left")) {
+
+        imageWrapper.classList.remove("align-center", "align-right");
+        imageWrapper.classList.add("align-left");
+
+        saveState();
+    }
+
+    // Alinear centro
+    if (target.classList.contains("btn-img-center")) {
+
+        imageWrapper.classList.remove("align-left", "align-right");
+        imageWrapper.classList.add("align-center");
+
+        saveState();
+    }
+
+    // Alinear derecha
+    if (target.classList.contains("btn-img-right")) {
+
+        imageWrapper.classList.remove("align-left", "align-center");
+        imageWrapper.classList.add("align-right");
+
+        saveState();
+    }
+
+    // Eliminar imagen
+    if (target.classList.contains("image-control-delete")) {
+
+        const prev = imageWrapper.previousElementSibling;
+        const next = imageWrapper.nextElementSibling;
+
+        if (prev && prev.tagName === "P" && prev.innerHTML.trim() === "<br>") {
+            prev.remove();
+        }
+
+        if (next && next.classList.contains("image-clear-fix")) {
+
+            const nextAfterClear = next.nextElementSibling;
+
+            next.remove();
+
+            if (nextAfterClear &&
+                nextAfterClear.tagName === "P" &&
+                nextAfterClear.innerHTML.trim() === "<br>") {
+
+                nextAfterClear.remove();
+            }
+        }
+
+        imageWrapper.remove();
+
+        saveState();
+    }
+
+});
+
+document.addEventListener("mousedown", function (e) {
+
+    if (!e.target.classList.contains("resize-handle")) return;
+
+    e.preventDefault();
+
+    currentHandle = e.target;
+    currentContainer = currentHandle.closest(".img-container");
+    currentImage = currentContainer.querySelector("img");
+
+    if (!currentContainer || !currentImage) return;
+
+    isResizing = true;
+});
+
+document.addEventListener("mousemove", function (e) {
+
+    if (!isResizing || !currentHandle) return;
+
+    const rect = currentContainer.getBoundingClientRect();
+
+    let newWidth;
+
+    if (currentHandle.className.includes("right")) {
+        newWidth = e.clientX - rect.left;
+    } else {
+        newWidth = rect.right - e.clientX;
+    }
+
+    const minWidth = 100;
+    const maxWidth = 600;
+
+    newWidth = Math.max(minWidth, Math.min(newWidth, maxWidth));
+
+    const aspectRatio = currentImage.naturalWidth / currentImage.naturalHeight;
+    const newHeight = newWidth / aspectRatio;
+
+    currentImage.style.width = newWidth + "px";
+    currentImage.style.height = newHeight + "px";
+
+    currentContainer.style.width = currentImage.style.width;
+    currentContainer.style.height = currentImage.style.height;
+
+});
+
+document.addEventListener("mouseup", function () {
+
+    if (!isResizing) return;
+
+    isResizing = false;
+
+    currentHandle = null;
+    currentContainer = null;
+    currentImage = null;
+
+    saveState();
+
+});
+
 function applyPageFormat(format) {
 
     const container = document.getElementById("document-container");
@@ -27,7 +456,7 @@ function applyPageFormat(format) {
 
     container.style.width = page.width + "px";
     container.style.minHeight = page.height + "px";
-
+    saveState();
 }
 
 function getEditorSelection() {
@@ -83,7 +512,7 @@ function bold() {
     }
 
     sel.removeAllRanges();
-    commitChange();
+    saveState();
 
 }
 
@@ -125,7 +554,7 @@ function underline() {
     }
 
     sel.removeAllRanges();
-    commitChange();
+    saveState();
 
 }
 
@@ -167,7 +596,7 @@ function italic() {
     }
 
     sel.removeAllRanges();
-    commitChange();
+    saveState();
 
 }
 
@@ -221,7 +650,7 @@ function strikethrough() {
 
     }
 
-    commitChange();
+    saveState();
 
 }
 
@@ -263,7 +692,7 @@ function alignText(mode) {
     const after = editor.innerHTML;
 
     if (before !== after) {
-        commitChange();
+    saveState();
     }
 
 }
@@ -322,7 +751,7 @@ function toggleList(type) {
     const after = editor.innerHTML;
 
     if (before !== after) {
-        commitChange();
+    saveState();
     }
 
 }
@@ -670,6 +1099,7 @@ async function loadTemplate() {
 
         }
 
+        saveState();
     } catch (error) {
 
         console.error("Error real:", error);
