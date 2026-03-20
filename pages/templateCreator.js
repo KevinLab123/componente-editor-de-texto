@@ -1333,18 +1333,58 @@ function insertImageBase64() {
     input.click();
 }
 
-async function saveContent() {
+// Función auxiliar para generar el string Base64 del PDF
+async function generatePDFBase64() {
+    const previewElement = document.getElementById("pdf-preview");
+    
+    // Obtenemos las dimensiones reales del elemento tal cual se ve en pantalla
+    const rect = previewElement.getBoundingClientRect();
+    const width = rect.width;
+    const height = rect.height;
 
+    const options = {
+        margin: 0,
+        image: { type: "jpeg", quality: 0.95 },
+        html2canvas: { 
+            scale: 2, // Subir a 2 mejora la precisión del renderizado de tablas
+            useCORS: true,
+            logging: false,
+            width: width,  // Forzamos el ancho del canvas al ancho del elemento
+            height: height, // Forzamos el alto del canvas al alto del elemento
+            scrollX: 0,    // Evita desplazamientos si el usuario tiene scroll horizontal
+            scrollY: 0
+        },
+        jsPDF: { 
+            unit: "px", 
+            format: [width, height], 
+            orientation: "portrait",
+            hotfixes: ["px_scaling"] // Ayuda a jsPDF a entender mejor los píxeles
+        }
+    };
+
+    return await html2pdf()
+        .set(options)
+        .from(previewElement)
+        .outputPdf('datauristring');
+}
+
+async function saveContent() {
     const headerContent = document.getElementById('header-editor').innerHTML;
     const bodyContent = document.getElementById('body-editor').innerHTML;
     const footerContent = document.getElementById('footer-editor').innerHTML;
+    const filename = document.getElementById('filename').value || "Sin-nombre";
 
-    const filename = document.getElementById('filename').value;
+    // 1. Generamos el Preview en Base64 antes de enviar
+    let pdfBase64 = "";
+    try {
+        pdfBase64 = await generatePDFBase64();
+    } catch (e) {
+        console.error("Error generando preview:", e);
+    }
 
     const url = 'http://localhost:3000/documents';
 
     try {
-
         const res = await fetch(url);
         const data = await res.json();
 
@@ -1354,9 +1394,7 @@ async function saveContent() {
 
         const response = await fetch(url, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 id: nextId,
                 name: filename,
@@ -1365,16 +1403,14 @@ async function saveContent() {
                 header: headerContent,
                 content: bodyContent,
                 footer: footerContent,
-                pageFormat: currentPageFormat
+                pageFormat: currentPageFormat,
+                preview: pdfBase64 // <-- Aquí enviamos el Base64 a la columna 'preview'
             })
         });
 
-        const result = await response.json();
-
-        alert("Plantilla guardada correctamente");
-
-        console.log(result);
-
+        if (response.ok) {
+            alert("Plantilla y Preview guardados correctamente");
+        }
     } catch (error) {
         console.error('Error guardando documento:', error);
     }

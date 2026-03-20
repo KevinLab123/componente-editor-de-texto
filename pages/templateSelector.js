@@ -1,15 +1,17 @@
+// Variable global para acceder a los datos sin repetir peticiones fetch
+let allTemplates = [];
+
 document.addEventListener('DOMContentLoaded', () => {
     const cardsContainer = document.getElementById('cards-container');
 
-    // 1. Obtener las plantillas desde la API
     const loadTemplates = async () => {
         try {
             const response = await fetch('http://localhost:3000/documents');
-            
             if (!response.ok) throw new Error('Error al obtener plantillas');
             
-            const templates = await response.json();
-            renderCards(templates);
+            // Guardamos en la variable global
+            allTemplates = await response.json();
+            renderCards(allTemplates);
         } catch (error) {
             console.error('Error:', error);
             cardsContainer.innerHTML = `
@@ -21,11 +23,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // 2. Renderizar las tarjetas con las nuevas clases de identificación
     const renderCards = (templates) => {
         cardsContainer.innerHTML = ''; 
 
-        templates.forEach((doc, index) => {
+        templates.forEach((doc) => {
             const cardCol = document.createElement('div');
             cardCol.className = 'col';
 
@@ -61,19 +62,48 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    // Iniciar carga al disparar el DOMContentLoaded
     loadTemplates();
 });
 
 /** * FUNCIONES GLOBALES */
 
 function selectTemplate(id) {
-    // Redirección directa al manejador pasando el ID por URL
     window.location.href = `templateHandler.html?id=${id}`;
 }
 
 function previewTemplate(id) {
-    // Lógica para previsualización (puedes implementar un modal aquí luego)
-    console.log("Previsualizando plantilla con ID:", id);
-    alert("Iniciando previsualización de la plantilla #" + id);
+    // 1. Buscar la plantilla en los datos cargados
+    const template = allTemplates.find(t => t.id === id);
+
+    if (!template || !template.preview) {
+        alert("Esta plantilla no cuenta con una vista previa generada.");
+        return;
+    }
+
+    // 2. Referenciar elementos del modal
+    const modalElement = document.getElementById('previewModal');
+    const pdfViewer = document.getElementById('pdf-viewer');
+    const modalTitle = document.getElementById('previewModalLabel');
+
+    // 3. Adaptación: Inyectar parámetros de visualización
+    // #toolbar=0: Oculta la barra de herramientas (guardar/imprimir)
+    // &navpanes=0: Oculta el panel de navegación lateral
+    // &view=FitH: Ajusta el zoom al ancho del visor automáticamente
+    const viewOptions = "#toolbar=0&navpanes=0&view=FitH";
+    
+    // Asignamos el Base64 concatenando las opciones
+    pdfViewer.src = template.preview + viewOptions;
+    
+    modalTitle.textContent = `Vista Previa: ${template.name}`;
+
+    // 4. Mostrar el modal
+    // Usamos 'getOrCreateInstance' para evitar duplicados si se abre varias veces
+    const modalInstance = bootstrap.Modal.getOrCreateInstance(modalElement);
+    modalInstance.show();
+
+    // 5. Limpieza al cerrar (Opcional pero recomendado)
+    // Esto evita que el PDF se quede cargado en memoria o reproduciendo sonidos si los hubiera
+    modalElement.addEventListener('hidden.bs.modal', () => {
+        pdfViewer.src = "";
+    }, { once: true });
 }
