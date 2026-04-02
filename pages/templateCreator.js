@@ -12,26 +12,122 @@ function formatDoc(cmd, value=null) {
     }
 }
 
+document.addEventListener('DOMContentLoaded', () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    // Cambiar 'id' por 'edit' para que coincida con el dashboard
+    const templateId = urlParams.get('edit'); 
 
+    if (templateId) {
+        loadTemplateToEdit(templateId);
+    }
+});
+
+async function loadTemplateToEdit(id) {
+    try {
+        const response = await fetch(`http://localhost:3000/documents/${id}`);
+        const data = await response.json();
+        
+        // IMPORTANTE: Como el servidor devuelve un array, tomamos el primer elemento
+        const template = Array.isArray(data) ? data[0] : data;
+
+        if (!template) {
+            console.error("No se encontró la plantilla en la respuesta");
+            return;
+        }
+
+        console.log("Cargando datos en los editores...");
+
+        // 1. Nombre del archivo e ID
+        document.getElementById('filename').value = template.name || 'Sin título';
+        // Guardamos el ID en el body para saber que estamos editando y no creando uno nuevo
+        document.body.dataset.editingId = template.id;
+
+        // 2. Actualizar Editores (Usa los IDs exactos de tu HTML)
+        if (template.content) {
+            document.getElementById('body-editor').innerHTML = template.content;
+        }
+        
+        if (template.footer) {
+            document.getElementById('footer-editor').innerHTML = template.footer;
+        }
+
+        // 3. Manejo del Header
+        // Si tu base de datos guarda la tabla completa:
+        if (template.header) {
+             document.getElementById('header-editor').innerHTML = template.header;
+        }
+
+        // 4. Formatos adicionales
+        if (template.pageformat) {
+            // Asumiendo que tienes una función setPageFormat definida
+            setPageFormat(template.pageformat); 
+        }
+
+        console.log("¡Renderización completada!");
+
+    } catch (error) {
+        console.error("Error al procesar los datos:", error);
+    }
+}
+
+async function updateTemplate() {
+    const id = document.body.dataset.editingId;
+    
+    if (!id) {
+        console.error("No hay un ID de plantilla para actualizar. ¿Es una plantilla nueva?");
+        return; 
+    }
+
+    // Capturamos el contenido actual de los editores
+    const updatedData = {
+        name: document.getElementById('filename').value,
+        header: document.getElementById('header-editor').innerHTML,
+        content: document.getElementById('body-editor').innerHTML,
+        footer: document.getElementById('footer-editor').innerHTML,
+        // Capturamos el departamento desde el atributo data-variable si es necesario
+        department: document.querySelector('[data-variable="departamento"]')?.innerText || '',
+        font: document.body.style.fontFamily,
+        pageformat: document.body.dataset.currentPageFormat || 'A4'
+    };
+
+    try {
+        const response = await fetch(`http://localhost:3000/documents/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updatedData)
+        });
+
+        if (response.ok) {
+            alert("¡Plantilla actualizada correctamente!");
+        } else {
+            throw new Error("Error en la actualización");
+        }
+    } catch (error) {
+        console.error("Error técnico al actualizar:", error);
+        alert("Hubo un problema al guardar los cambios.");
+    }
+}
 
 function handleFileMenu(option) {
+    const id = document.body.dataset.editingId;
 
-    switch(option){
-
-        case "pdf":
-            saveAsPDF("pdf");
+    switch(option) {
+        case "save": // El caso "save" debe gestionar el guardado
+            if (id) {
+                updateTemplate(); // Si hay ID, actualiza (PUT)
+            } else {
+                saveContent(); // Si no hay ID, crea (POST)
+            }
             break;
 
-        case "save":
-            saveContent();
+        case "pdf":
+            generatePDF(); // Aquí debería ir tu función de exportación
             break;
 
         case "new":
-            newDocument();
+            window.location.href = 'templateCreator.html';
             break;
-
     }
-
 }
 
 let currentPageFormat = "A4";

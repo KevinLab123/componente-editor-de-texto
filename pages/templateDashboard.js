@@ -64,6 +64,7 @@ function editTemplate(id) {
     window.location.href = `templateCreator.html?edit=${id}`;
 }
 
+
 function useTemplate(id) {
     // Redirige al Manejador para crear un reporte basado en esta plantilla
     window.location.href = `templateHandler.html?id=${id}`;
