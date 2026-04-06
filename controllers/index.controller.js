@@ -185,6 +185,22 @@ const getReportById = async (req, res) => {
     }
 };
 
+const deleteReport = async (req, res) => {
+    const id = req.params.id;
+    try {
+        const result = await pool.query('DELETE FROM reports WHERE id = $1', [id]);
+        
+        // Es vital responder con un JSON para que response.ok sea true en el frontend
+        res.status(200).json({ 
+            message: `Reporte ${id} eliminado correctamente`,
+            rowCount: result.rowCount 
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error al eliminar el reporte" });
+    }
+};
+
 module.exports = {
     getDocuments,
     createDocument,
@@ -193,5 +209,6 @@ module.exports = {
     updateDocument,
     createReport,
     getReports,
-    getReportById
+    getReportById,
+    deleteReport
 };

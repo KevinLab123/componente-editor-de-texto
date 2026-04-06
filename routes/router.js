@@ -1,7 +1,7 @@
 const {Router} = require('express');
 
 const router = Router();
-const {getDocuments,createDocument,getDocumentById,deleteDocument,updateDocument,createReport,getReports,getReportById} = require('../controllers/index.controller');
+const {getDocuments,createDocument,getDocumentById,deleteDocument,updateDocument,createReport,getReports,getReportById, deleteReport} = require('../controllers/index.controller');
 
 router.get('/documents' , getDocuments);
 router.get('/documents/:id' , getDocumentById);
@@ -13,6 +13,7 @@ router.put('/documents/:id', updateDocument);
 // Definimos el endpoint para crear reportes
 router.post('/reports', createReport);
 router.get('/reports' , getReports);
-router.get('/reports:id' , getReportById);
+router.get('/reports/:id' , getReportById);
+router.delete('/reports/:id', deleteReport)
 
 module.exports = router;
