@@ -329,6 +329,54 @@ const deleteUser = async (req, res) => {
     }
 };
 
+const loginUser = async (req, res) => {
+    const { username, password } = req.body;
+
+    try {
+        // 1. Buscamos el usuario por su nombre exacto
+        const response = await pool.query(
+            'SELECT id, username, password, role FROM users WHERE username = $1', 
+            [username]
+        );
+
+        // 2. Si no hay filas, el usuario no existe
+        if (response.rows.length === 0) {
+            return res.status(404).json({ 
+                success: false, 
+                message: "El usuario no existe en el sistema." 
+            });
+        }
+
+        const user = response.rows[0];
+
+        // 3. Comparación directa (sin cifrado)
+        if (user.password !== password) {
+            return res.status(401).json({ 
+                success: false, 
+                message: "La contraseña es incorrecta." 
+            });
+        }
+
+        // 4. Si coincide, enviamos la información útil para el frontend
+        res.status(200).json({
+            success: true,
+            message: "Acceso concedido",
+            user: {
+                id: user.id,
+                username: user.username,
+                role: user.role
+            }
+        });
+
+    } catch (error) {
+        console.error("Error en el proceso de login:", error);
+        res.status(500).json({ 
+            success: false, 
+            message: "Error técnico en el servidor." 
+        });
+    }
+};
+
 module.exports = {
     getDocuments,
     createDocument,
@@ -344,5 +392,6 @@ module.exports = {
     getUserById,
     updateUser,
     deleteUser,
-    createUser
+    createUser,
+    loginUser
 };

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Menú Principal - Sistema de Documentación</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        body { background-color: #f4f7f6; }
+        .card { 
+            transition: transform 0.3s; 
+            border: none; 
+            border-radius: 15px; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 8px 15px rgba(0,0,0,0.1); }
+        .icon-size { font-size: 3rem; color: #0d6efd; }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-dark bg-primary mb-5">
+    <div class="container">
+        <span class="navbar-brand mb-0 h1">Sistema de Gestión Dinámica</span>
+        <button class="btn btn-outline-light btn-sm" onclick="logout()">Cerrar Sesión</button>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="text-center mb-5">
+        <h2>Bienvenido, <span id="userNameDisplay" class="text-primary text-capitalize">Usuario</span></h2>
+        <p class="text-muted">Selecciona un módulo para comenzar a trabajar</p>
+    </div>
+
+    <div class="row g-4 justify-content-center">
+        <div class="col-md-4 d-none" id="card-users">
+            <div class="card h-100 text-center p-4">
+                <div class="card-body">
+                    <i class="bi bi-people-fill icon-size"></i>
+                    <h4 class="card-title mt-3">Usuarios</h4>
+                    <p class="card-text text-muted">Administrar cuentas, roles y accesos al sistema.</p>
+                    <a href="userDasboard.html" class="btn btn-primary w-100 mt-2">Gestionar Usuarios</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 d-none" id="card-templates">
+            <div class="card h-100 text-center p-4">
+                <div class="card-body">
+                    <i class="bi bi-file-earmark-diff-fill icon-size"></i>
+                    <h4 class="card-title mt-3">Plantillas</h4>
+                    <p class="card-text text-muted">Crear y modificar moldes para reportes institucionales.</p>
+                    <a href="templateDashboard.html" class="btn btn-primary w-100 mt-2">Gestionar Plantillas</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 d-none" id="card-reports">
+            <div class="card h-100 text-center p-4">
+                <div class="card-body">
+                    <i class="bi bi-file-earmark-text-fill icon-size"></i>
+                    <h4 class="card-title mt-3">Reportes</h4>
+                    <p class="card-text text-muted">Generar, ver y descargar documentos finales en PDF.</p>
+                    <a href="reportDashboard.html" class="btn btn-primary w-100 mt-2">Gestionar Reportes</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // 1. Obtener datos del usuario desde LocalStorage
+        const userData = JSON.parse(localStorage.getItem('currentUser'));
+
+        // 2. Seguridad: Si no hay usuario, subir un nivel para ir al index.html (Login)
+        if (!userData) {
+            window.location.href = '../index.html';
+            return;
+        }
+
+        // 3. Mostrar nombre en pantalla
+        document.getElementById('userNameDisplay').textContent = userData.username;
+
+        // 4. Lógica de Permisos (Mostrar/Ocultar Cards)
+        const role = userData.role;
+
+        // El dashboard de Reportes siempre se muestra si hay sesión
+        document.getElementById('card-reports').classList.remove('d-none');
+
+        if (role === 'admin') {
+            document.getElementById('card-users').classList.remove('d-none');
+            document.getElementById('card-templates').classList.remove('d-none');
+        } 
+        else if (role === 'editor') {
+            document.getElementById('card-templates').classList.remove('d-none');
+        }
+        // Rol 'viewer' solo verá el card de reportes por defecto
+    });
+
+    function logout() {
+        localStorage.removeItem('currentUser');
+        // Usamos ../ para salir de /pages y llegar al index.html en la raíz
+        window.location.href = '../index.html';
+    }
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

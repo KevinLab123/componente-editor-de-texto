@@ -18,7 +18,8 @@ const {
     getUserById,
     createUser,
     updateUser,
-    deleteUser
+    deleteUser,
+    loginUser //
 } = require('../controllers/index.controller');
 
 // --- Rutas de Documentos (Plantillas) ---
@@ -41,5 +42,6 @@ router.get('/users/:id', getUserById);     // Obtener un usuario por ID
 router.post('/users', createUser);         // Crear nuevo usuario
 router.put('/users/:id', updateUser);      // Actualizar usuario
 router.delete('/users/:id', deleteUser);   // Eliminar usuario
-
+// --- Rutas de Autenticación ---
+router.post('/login', loginUser);
 module.exports = router;

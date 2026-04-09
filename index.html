@@ -1,11 +1,97 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Acceso al Sistema - Gestión de Documentos</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; }
+        .login-container { max-width: 400px; margin-top: 100px; }
+        .card { border: none; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    </style>
 </head>
 <body>
-    
+
+<div class="container login-container">
+    <div class="card p-4">
+        <div class="text-center mb-4">
+            <h3 class="fw-bold">Iniciar Sesión</h3>
+            <p class="text-muted">Ingresa tus credenciales para continuar</p>
+        </div>
+        
+        <form id="loginForm">
+            <div class="mb-3">
+                <label for="username" class="form-label">Usuario</label>
+                <input type="text" class="form-control" id="username" placeholder="Ej: Vista" required>
+            </div>
+            <div class="mb-3">
+                <label for="password" class="form-label">Contraseña</label>
+                <input type="password" class="form-control" id="password" required>
+            </div>
+            
+            <div id="errorMessage" class="alert alert-danger d-none" role="alert">
+                </div>
+
+            <button type="submit" class="btn btn-primary w-100 py-2 fw-bold">Entrar al Sistema</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    const loginForm = document.getElementById('loginForm');
+    const errorMessage = document.getElementById('errorMessage');
+
+    loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        // Limpiar mensajes previos
+        errorMessage.classList.add('d-none');
+
+        // Capturar datos del formulario
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+
+        try {
+            // Petición al backend (ajusta la URL si es necesario)
+            const response = await fetch('http://localhost:3000/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ username, password })
+            });
+
+            const result = await response.json();
+
+            if (response.ok && result.success) {
+                // Éxito: Guardamos la info en un objeto/array o LocalStorage
+                const sessionData = {
+                    id: result.user.id,
+                    username: result.user.username,
+                    role: result.user.role,
+                    loginTime: new Date().toLocaleString()
+                };
+
+                // Guardar en LocalStorage para usar en otras páginas
+                localStorage.setItem('currentUser', JSON.stringify(sessionData));
+
+                window.location.href = 'pages/mainPage.html';
+                
+            } else {
+                // Error: Mostrar mensaje del servidor
+                errorMessage.textContent = result.message || 'Error al iniciar sesión';
+                errorMessage.classList.remove('d-none');
+            }
+
+        } catch (error) {
+            console.error('Error de conexión:', error);
+            errorMessage.textContent = 'No se pudo conectar con el servidor.';
+            errorMessage.classList.remove('d-none');
+        }
+    });
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
