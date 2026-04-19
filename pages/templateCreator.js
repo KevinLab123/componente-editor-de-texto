@@ -104,6 +104,7 @@ async function loadTemplateToEdit(id) {
         }
         setFontFamily(template.font);
         console.log("¡Renderización completada!");
+        updatePreview();
 
     } catch (error) {
         console.error("Error al procesar los datos:", error);
@@ -174,7 +175,7 @@ function handleFileMenu(option) {
             break;
 
         case "pdf":
-            generatePDF(); // Aquí debería ir tu función de exportación
+            saveAsPDF("pdf"); // Aquí debería ir tu función de exportación
             break;
 
         case "new":
@@ -213,6 +214,7 @@ function bold() {
     sel.removeAllRanges();
     setFontFamily(currentFont)
     commitChange(); // Guardar estado después de aplicar formato
+    updatePreview();
 }
 
 function underline() {
@@ -250,6 +252,7 @@ function underline() {
     sel.removeAllRanges();
     setFontFamily(currentFont)
     commitChange(); // Guardar estado después de aplicar formato
+    updatePreview();
 }
 
 function italic() {
@@ -286,6 +289,7 @@ function italic() {
     sel.removeAllRanges();
     setFontFamily(currentFont)
     commitChange(); // Guardar estado después de aplicar formato
+    updatePreview();
 }
 
 function strikethrough() {
@@ -345,6 +349,7 @@ function strikethrough() {
     }
 
     commitChange();
+    updatePreview();
 }
 
 function alignText(mode) {
@@ -387,6 +392,7 @@ function alignText(mode) {
     //  Solo guardar si realmente cambió
     if (before !== after) {
         saveState();
+        updatePreview();
     }
 }
 
@@ -467,6 +473,7 @@ function addLink() {
     range.insertNode(a);
     sel.removeAllRanges();
     saveState();
+    updatePreview();
 }
 
 function buildCleanSection(editorId) {
@@ -617,6 +624,7 @@ function toggleCodeMode(editor, button) {
         updateInteractiveListeners();
     }
 }
+
 function commitChange() {
     if (!activeEditor) return;
 
@@ -684,6 +692,7 @@ function undo() {
         editorHistory.currentIndex--;
         activeEditor.innerHTML = editorHistory.history[editorHistory.currentIndex];
     }
+    updatePreview();
 }
 
 function redo() {
@@ -696,6 +705,7 @@ function redo() {
         editorHistory.currentIndex++;
         activeEditor.innerHTML = editorHistory.history[editorHistory.currentIndex];
     }
+    updatePreview();
 }
 // Inicializar historial
 function initializeHistories() {
@@ -814,79 +824,79 @@ function openButtonModal() {
 }
 
 function insertButton() {
-    if (!activeEditor){
-        alert("Selecciona un editor antes de insertar el botón.");
-        return
-    };
-    const editor = activeEditor;
-    editor.focus();
+  if (!activeEditor) {
+    alert("Selecciona un editor antes de insertar el botón.");
+    return;
+  }
+  const editor = activeEditor;
+  editor.focus();
 
-    /* ===== valores desde el card/modal ===== */
+  /* ===== valores desde el card/modal ===== */
 
-    const label = document.getElementById("btnLabel").value.trim();
-    if (!label) {
-        alert("Debe indicar un texto");
-        return;
-    }
+  const label = document.getElementById("btnLabel").value.trim();
+  if (!label) {
+    alert("Debe indicar un texto");
+    return;
+  }
 
-    const color = document.querySelector('input[name="btnColor"]:checked').value;
-    const action = document.getElementById("btnAction").value;
+  const color = document.querySelector('input[name="btnColor"]:checked').value;
+  const action = document.getElementById("btnAction").value;
 
-    /* ===== crear botón ===== */
+  /* ===== crear botón ===== */
 
-    const btn = document.createElement('button');
-    btn.className = `btn ${color} template-btn`;
-    btn.setAttribute('contenteditable', 'false');
-    btn.dataset.action = action;
-    btn.textContent = label;
+  const btn = document.createElement("button");
+  btn.className = `btn ${color} template-btn`;
+  btn.setAttribute("contenteditable", "false");
+  btn.dataset.action = action;
+  btn.textContent = label;
 
-    editor.focus();
+  editor.focus();
 
-    /* ===== TU MISMA LÓGICA RANGE ===== */
+  /* ===== TU MISMA LÓGICA RANGE ===== */
 
-    const sel = window.getSelection();
+  const sel = window.getSelection();
 
-    if (savedRange) {
-        savedRange.deleteContents();
-        savedRange.insertNode(btn);
+  if (savedRange) {
+    savedRange.deleteContents();
+    savedRange.insertNode(btn);
 
-        const space = document.createTextNode('\u00A0');
-        btn.after(space);
+    const space = document.createTextNode("\u00A0");
+    btn.after(space);
 
-        savedRange.setStartAfter(space);
-        savedRange.collapse(true);
-        sel.removeAllRanges();
-        sel.addRange(savedRange);
-        saveState();
+    savedRange.setStartAfter(space);
+    savedRange.collapse(true);
+    sel.removeAllRanges();
+    sel.addRange(savedRange);
+    saveState();
+    updatePreview();
+  } else if (sel && sel.rangeCount > 0) {
+    const range = sel.getRangeAt(0);
+    range.deleteContents();
+    range.insertNode(btn);
 
-    } else if (sel && sel.rangeCount > 0) {
+    const space = document.createTextNode("\u00A0");
+    btn.after(space);
 
-        const range = sel.getRangeAt(0);
-        range.deleteContents();
-        range.insertNode(btn);
+    range.setStartAfter(space);
+    range.collapse(true);
+    sel.removeAllRanges();
+    sel.addRange(range);
+    saveState();
+    updatePreview();
+  } else {
+    editor.appendChild(btn);
+    editor.appendChild(document.createTextNode("\u00A0"));
+    saveState();
+    updatePreview();
+  }
 
-        const space = document.createTextNode('\u00A0');
-        btn.after(space);
+  /* ===== limpiar y cerrar ===== */
 
-        range.setStartAfter(space);
-        range.collapse(true);
-        sel.removeAllRanges();
-        sel.addRange(range);
-        saveState();
-    } else {
+  document.getElementById("btnLabel").value = "";
 
-        editor.appendChild(btn);
-        editor.appendChild(document.createTextNode('\u00A0'));
-        saveState();
-    }
+  buttonModal.hide();
 
-    /* ===== limpiar y cerrar ===== */
-
-    document.getElementById("btnLabel").value = "";
-
-    buttonModal.hide();
-
-    updateInteractiveListeners();
+  updateInteractiveListeners();
 }
 
 function toggleList(type) {
@@ -914,6 +924,7 @@ function toggleList(type) {
         range.insertNode(newList);
     }
     sel.removeAllRanges();
+    updatePreview();
 }
 
 function setFontSize(size) {
@@ -944,6 +955,7 @@ function setFontSize(size) {
         sel.removeAllRanges();
         sel.addRange(range);
         saveState();
+        updatePreview();
     } catch (e) {
         console.error("Error al cambiar el tamaño de fuente:", e);
     }
@@ -979,10 +991,12 @@ function setBlockFormat(tagName) {
         newBlock.innerHTML = closestBlock.innerHTML;
         closestBlock.replaceWith(newBlock);
         saveState();
+        updatePreview();
     } else {
         newBlock.appendChild(range.extractContents());
         range.insertNode(newBlock);
         saveState();
+        updatePreview();
     }
     sel.removeAllRanges();
 }
@@ -1031,6 +1045,7 @@ function mergeRight() {
     // Expandir la celda seleccionada
     td.setAttribute("colspan", totalColumns);
     saveState();
+    updatePreview();
 }
 
 function buildTableMatrix(table) {
@@ -1097,6 +1112,7 @@ function addColumn(table) {
     }
 
     saveState();
+    updatePreview();
 }
 
 let resizing = false;
@@ -1213,11 +1229,13 @@ function insertTable() {
         sel.addRange(range);
 
         saveState();
+        updatePreview();
     } else {
         editor.appendChild(spaceAbove);
         editor.appendChild(wrapper);
         editor.appendChild(spaceBelow);
         saveState();
+        updatePreview();
     }
 }
 
@@ -1289,9 +1307,11 @@ function insertHeaderImage() {
                     deleteBtn.onclick = function () {
                         wrapper.remove();
                         saveState();
+
                     };
 
                     saveState();
+
                 };
 
                 reader.readAsDataURL(result);
