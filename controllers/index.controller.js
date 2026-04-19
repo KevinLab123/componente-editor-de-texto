@@ -115,13 +115,41 @@ const updateDocument = async (req, res) => {
 }
 
 const createReport = async (req, res) => {
-    const { id, baseTemplate, consecutive, header, content, footer, preview } = req.body;
+    const {
+        id,
+        baseTemplate,
+        consecutive,
+        header,
+        content,
+        footer,
+        preview,
+        state,
+        created_by,
+        reviewed_by
+    } = req.body;
 
     try {
         const response = await pool.query(
-            `INSERT INTO reports (id, "baseTemplate", consecutive, header, content, footer, preview)
-             VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
-            [id, baseTemplate, consecutive, header, content, footer, preview ?? null]
+            `INSERT INTO reports (
+                id, "baseTemplate", consecutive, header, content, footer, preview,
+                state, created_at, last_modification, created_by, reviewed_by
+            )
+             VALUES (
+                $1, $2, $3, $4, $5, $6, $7,
+                $8, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, $9, $10
+             ) RETURNING *`,
+            [
+                id,
+                baseTemplate,
+                consecutive,
+                header,
+                content,
+                footer,
+                preview ?? null,
+                state ?? null,
+                created_by ?? null,
+                reviewed_by ?? null
+            ]
         );
 
         console.log("Reporte creado:", response.rows[0]);
@@ -209,7 +237,9 @@ const updateReport = async (req, res) => {
         header,
         content,
         footer,
-        preview
+        preview,
+        state,
+        reviewed_by
     } = req.body;
 
     try {
@@ -220,8 +250,11 @@ const updateReport = async (req, res) => {
                 header = $3, 
                 content = $4, 
                 footer = $5,
-                preview = $6
-            WHERE id = $7
+                preview = $6,
+                state = $7,
+                reviewed_by = $8,
+                last_modification = CURRENT_TIMESTAMP
+            WHERE id = $9
         `;
 
         const values = [
@@ -231,6 +264,8 @@ const updateReport = async (req, res) => {
             content,
             footer,
             preview ?? null,
+            state ?? null,
+            reviewed_by ?? null,
             id
         ];
 

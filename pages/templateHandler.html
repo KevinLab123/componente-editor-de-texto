@@ -57,7 +57,43 @@
     </div>
 </div>
 
-
+<div class="row mb-3 d-none" id="report-workflow-card">
+    <div class="col">
+        <div class="card shadow-sm border-primary border-opacity-25">
+            <div class="card-header bg-white py-2 d-flex align-items-center justify-content-between flex-wrap gap-2">
+                <span class="fw-semibold"><i class="bi bi-diagram-3 me-2"></i>Flujo del documento</span>
+            </div>
+            <div class="card-body py-3">
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-4" id="report-state-group">
+                        <label class="form-label small text-muted mb-1" for="report-state-select">Estado</label>
+                        <select id="report-state-select" class="form-select form-select-sm" disabled>
+                            <option value="por revisar">Por revisar</option>
+                            <option value="en revisión">En revisión</option>
+                            <option value="aprobado">Aprobado</option>
+                        </select>
+                        <small class="text-muted d-block mt-1" id="report-state-help"></small>
+                    </div>
+                    <div class="col-md-4 d-none" id="report-dates-col">
+                        <div class="small text-muted">Creado</div>
+                        <div id="report-created-at-display" class="fw-medium">—</div>
+                        <div class="small text-muted mt-2">Última modificación</div>
+                        <div id="report-last-modification-display" class="fw-medium">—</div>
+                    </div>
+                    <div class="col-md-4 d-none" id="report-users-col">
+                        <div class="small text-muted">Creador (usuario)</div>
+                        <div id="report-created-by-display">—</div>
+                        <div class="small text-muted mt-2">Revisó (usuario)</div>
+                        <div id="report-reviewed-by-display">—</div>
+                    </div>
+                </div>
+                <div id="report-new-hint" class="alert alert-info py-2 mt-3 mb-0 d-none">
+                    <small><i class="bi bi-info-circle me-1"></i>Al guardar se registrará el estado <strong>por revisar</strong> y tu usuario como creador del reporte.</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 <div class="d-flex justify-content-center">
 

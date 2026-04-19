@@ -10,6 +10,159 @@ let activeFormatSection = null;
 /** HTML por defecto del encabezado al limpiar o si la plantilla no trae header. */
 let defaultDocHeaderSnapshot = "";
 
+const API_URL = "http://localhost:3000";
+
+function getCurrentUser() {
+    try {
+        const raw = localStorage.getItem("currentUser");
+        if (!raw) return null;
+        return JSON.parse(raw);
+    } catch {
+        return null;
+    }
+}
+
+/** Rol vista (viewer): puede cambiar el estado de revisión del reporte. */
+function canManageReportReviewState() {
+    const u = getCurrentUser();
+    return Boolean(u && u.role === "viewer");
+}
+
+function formatReportTimestamp(val) {
+    if (!val) return "—";
+    const d = new Date(val);
+    return Number.isNaN(d.getTime()) ? String(val) : d.toLocaleString("es-ES");
+}
+
+let usersByIdCache = null;
+async function getUsersByIdMap() {
+    if (usersByIdCache) return usersByIdCache;
+    try {
+        const r = await fetch(`${API_URL}/users`);
+        if (!r.ok) return {};
+        const list = await r.json();
+        const map = {};
+        (Array.isArray(list) ? list : []).forEach((u) => {
+            map[u.id] = u.username;
+        });
+        usersByIdCache = map;
+        return map;
+    } catch {
+        return {};
+    }
+}
+
+function applyReportReviewStateControls() {
+    const sel = document.getElementById("report-state-select");
+    const help = document.getElementById("report-state-help");
+    if (!sel) return;
+    const canEdit = canManageReportReviewState();
+    sel.disabled = !canEdit;
+    if (help) {
+        help.textContent = canEdit
+            ? "Con el rol vista puedes cambiar el estado y usar Guardar documento."
+            : "Solo el rol vista (viewer) puede modificar el estado de revisión.";
+    }
+}
+
+function initReportWorkflowUi(reportIdFromUrl) {
+    const card = document.getElementById("report-workflow-card");
+    const newHint = document.getElementById("report-new-hint");
+    const datesCol = document.getElementById("report-dates-col");
+    const usersCol = document.getElementById("report-users-col");
+    if (!card) return;
+
+    if (reportIdFromUrl) {
+        card.classList.remove("d-none");
+        if (newHint) newHint.classList.add("d-none");
+        if (datesCol) datesCol.classList.remove("d-none");
+        if (usersCol) usersCol.classList.remove("d-none");
+        return;
+    }
+
+    if (getTemplateIdFromURL()) {
+        card.classList.remove("d-none");
+        if (newHint) newHint.classList.remove("d-none");
+        if (datesCol) datesCol.classList.add("d-none");
+        if (usersCol) usersCol.classList.add("d-none");
+        const sel = document.getElementById("report-state-select");
+        if (sel) {
+            sel.value = "por revisar";
+            sel.disabled = true;
+        }
+        applyReportReviewStateControls();
+    }
+}
+
+async function populateWorkflowFromReport(report) {
+    const usersMap = await getUsersByIdMap();
+    const stateVal = report.state || "por revisar";
+    document.body.dataset.reportState = stateVal;
+    document.body.dataset.reportCreatedBy =
+        report.created_by != null ? String(report.created_by) : "";
+    document.body.dataset.reportReviewedBy =
+        report.reviewed_by != null ? String(report.reviewed_by) : "";
+    document.body.dataset.reportCreatedAt = report.created_at || "";
+    document.body.dataset.reportLastModification = report.last_modification || "";
+
+    const sel = document.getElementById("report-state-select");
+    if (sel) {
+        sel.value = stateVal;
+        const hasOpt = [...sel.options].some((o) => o.value === sel.value);
+        if (!hasOpt) {
+            const opt = document.createElement("option");
+            opt.value = stateVal;
+            opt.textContent = stateVal;
+            sel.appendChild(opt);
+            sel.value = stateVal;
+        }
+    }
+
+    const cAt = document.getElementById("report-created-at-display");
+    const lMod = document.getElementById("report-last-modification-display");
+    const cBy = document.getElementById("report-created-by-display");
+    const rBy = document.getElementById("report-reviewed-by-display");
+    if (cAt) cAt.textContent = formatReportTimestamp(report.created_at);
+    if (lMod) lMod.textContent = formatReportTimestamp(report.last_modification);
+    if (cBy) {
+        cBy.textContent =
+            report.created_by != null
+                ? usersMap[report.created_by] || `#${report.created_by}`
+                : "—";
+    }
+    if (rBy) {
+        rBy.textContent =
+            report.reviewed_by != null
+                ? usersMap[report.reviewed_by] || `#${report.reviewed_by}`
+                : "—";
+    }
+
+    const card = document.getElementById("report-workflow-card");
+    if (card) card.classList.remove("d-none");
+    applyReportReviewStateControls();
+}
+
+function buildReportMetadataForUpdate() {
+    const sel = document.getElementById("report-state-select");
+    const stateVal = sel
+        ? sel.value
+        : document.body.dataset.reportState || "por revisar";
+    const prevState = document.body.dataset.reportState || "por revisar";
+    let reviewedByVal = null;
+    const prevRb = document.body.dataset.reportReviewedBy;
+    if (prevRb && prevRb !== "") {
+        const n = parseInt(prevRb, 10);
+        if (!Number.isNaN(n)) reviewedByVal = n;
+    }
+    if (canManageReportReviewState()) {
+        const u = getCurrentUser();
+        if (stateVal !== prevState && u && u.id != null) {
+            reviewedByVal = u.id;
+        }
+    }
+    return { state: stateVal, reviewed_by: reviewedByVal };
+}
+
 function getFormatTargetEditor() {
     return activeFormatSection || document.getElementById("doc-body");
 }
@@ -1864,10 +2017,15 @@ window.onload = () => {
 };
 
 // Función para registrar el reporte sin consecutivo específico
-const API_URL = 'http://localhost:3000';
 async function saveReport() {
     if (!currentBaseTemplateId) {
         notifyWarning("Error: No hay una plantilla base cargada.");
+        return;
+    }
+
+    const creator = getCurrentUser();
+    if (!creator || creator.id == null) {
+        notifyWarning("Inicia sesión para registrar el reporte (se requiere creador).");
         return;
     }
 
@@ -1898,11 +2056,14 @@ async function saveReport() {
         const reportBody = {
             id: nextId,
             baseTemplate: currentBaseTemplateId,
-            consecutive: "SIN_CONSECUTIVO" ,
+            consecutive: "SIN_CONSECUTIVO",
             header: headerHTML,
             content: contentHTML,
             footer: footerHTML,
-            preview: pdfBase64
+            preview: pdfBase64,
+            state: "por revisar",
+            created_by: creator.id,
+            reviewed_by: null
         };
 
         // 3. Petición POST a la API
@@ -1978,10 +2139,10 @@ function renderTemplate(doc) {
 
 // templateHandler.js
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener("DOMContentLoaded", () => {
     const urlParams = new URLSearchParams(window.location.search);
-    const reportId = urlParams.get('reportId'); // Identificador del reporte a editar
-
+    const reportId = urlParams.get("reportId");
+    initReportWorkflowUi(reportId);
     if (reportId) {
         loadReportToEdit(reportId);
     }
@@ -1989,7 +2150,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function loadReportToEdit(id) {
     try {
-        const response = await fetch(`http://localhost:3000/reports/${id}`);
+        const response = await fetch(`${API_URL}/reports/${id}`);
         const data = await response.json();
         
         // Normalizamos la respuesta (manejo de array o objeto único)
@@ -2004,7 +2165,8 @@ async function loadReportToEdit(id) {
 
         // Almacenamos el ID en el dataset del body para referencia global
         document.body.dataset.editingReportId = report.id;
-        document.body.dataset.baseTemplateId = report.baseTemplate;
+        const bt = report.baseTemplate ?? report.basetemplate;
+        document.body.dataset.baseTemplateId = bt != null ? String(bt) : "";
 
         // Inyectamos el contenido en los 3 editores específicos
         const headerEl = document.getElementById('doc-header');
@@ -2033,6 +2195,8 @@ async function loadReportToEdit(id) {
 
         updatePreview();
 
+        await populateWorkflowFromReport(report);
+
         console.log("Reporte cargado exitosamente en los editores.");
 
     } catch (error) {
@@ -2057,6 +2221,8 @@ async function updateReport() {
         console.error("Error generando preview del reporte:", e);
     }
 
+    const meta = buildReportMetadataForUpdate();
+
     // Preparamos el objeto con la estructura de la tabla 'reports'
     const updatedReport = {
         baseTemplate: parseInt(document.body.dataset.baseTemplateId, 10),
@@ -2064,11 +2230,13 @@ async function updateReport() {
         header: document.getElementById('doc-header').innerHTML,
         content: document.getElementById('doc-body').innerHTML,
         footer: document.getElementById('doc-footer').innerHTML,
-        preview: pdfBase64
+        preview: pdfBase64,
+        state: meta.state,
+        reviewed_by: meta.reviewed_by
     };
 
     try {
-        const response = await fetch(`http://localhost:3000/reports/${id}`, {
+        const response = await fetch(`${API_URL}/reports/${id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(updatedReport)
@@ -2076,8 +2244,22 @@ async function updateReport() {
 
         if (response.ok) {
             notifySuccess("¡Reporte actualizado correctamente!");
-            // Opcional: Redirigir al dashboard tras guardar
-            // window.location.href = 'reportDashboard.html';
+            document.body.dataset.reportState = meta.state;
+            if (meta.reviewed_by != null) {
+                document.body.dataset.reportReviewedBy = String(meta.reviewed_by);
+            }
+            const lMod = document.getElementById("report-last-modification-display");
+            if (lMod) lMod.textContent = formatReportTimestamp(new Date());
+            if (meta.reviewed_by != null) {
+                const rBy = document.getElementById("report-reviewed-by-display");
+                const u = getCurrentUser();
+                if (rBy && u && u.id === meta.reviewed_by) {
+                    rBy.textContent = u.username || `#${meta.reviewed_by}`;
+                } else if (rBy) {
+                    const map = await getUsersByIdMap();
+                    rBy.textContent = map[meta.reviewed_by] || `#${meta.reviewed_by}`;
+                }
+            }
         } else {
             const error = await response.json();
             throw new Error(error.message || "Error en la actualización");

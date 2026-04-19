@@ -23,7 +23,7 @@ async function loadReports() {
         if (reports.length === 0) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="4" class="text-center py-4 text-muted">
+                    <td colspan="5" class="text-center py-4 text-muted">
                         No hay reportes en la base de datos.
                     </td>
                 </tr>`;
@@ -32,16 +32,25 @@ async function loadReports() {
 
         reports.forEach(report => {
             const tr = document.createElement('tr');
+            const st = (report.state && String(report.state).trim()) || '—';
+            let badgeClass = 'bg-secondary';
+            const low = st.toLowerCase();
+            if (low.includes('aprobado')) badgeClass = 'bg-success';
+            else if (low.includes('revisión') || low.includes('revision')) badgeClass = 'bg-warning text-dark';
+            else if (low.includes('revisar')) badgeClass = 'bg-info text-dark';
             
             // Renderizado de cada fila de reporte
             tr.innerHTML = `
                 <td class="ps-4 fw-bold text-secondary">${report.id}</td>
                 <td>
+                    <span class="badge ${badgeClass} badge-status">${st}</span>
+                </td>
+                <td>
                     <div class="fw-semibold text-dark">${report.consecutive || 'SIN CONSECUTIVO'}</div>
                 </td>
                 <td>
                     <div class="text-muted">
-                        <i class="bi bi-layout-text-sidebar-reverse me-1"></i> ID: ${report.baseTemplate}
+                        <i class="bi bi-layout-text-sidebar-reverse me-1"></i> ID: ${report.baseTemplate ?? report.basetemplate}
                     </div>
                 </td>
                 <td class="text-center">
@@ -64,7 +73,7 @@ async function loadReports() {
 
     } catch (error) {
         console.error("Error:", error);
-        tbody.innerHTML = `<tr><td colspan="4" class="text-center text-danger py-4">Error al conectar con la API.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="5" class="text-center text-danger py-4">Error al conectar con la API.</td></tr>`;
     }
 }
 
