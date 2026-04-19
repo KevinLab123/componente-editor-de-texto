@@ -4,6 +4,205 @@ let startWidth = 0;
 let resizeCell = null;
 let templateFont = null;
 
+/** Editor activo para la barra superior (encabezado, cuerpo o pie). */
+let activeFormatSection = null;
+
+/** HTML por defecto del encabezado al limpiar o si la plantilla no trae header. */
+let defaultDocHeaderSnapshot = "";
+
+function getFormatTargetEditor() {
+    return activeFormatSection || document.getElementById("doc-body");
+}
+
+function handleFileMenu(option) {
+    switch (option) {
+        case "save":
+            handleSaveAction();
+            break;
+        case "pdf":
+            saveAsPDF();
+            break;
+        case "new":
+            if (confirm("¿Ir a la selección de plantillas para comenzar un documento nuevo?")) {
+                window.location.href = "templateSelector.html";
+            }
+            break;
+        default:
+            break;
+    }
+}
+
+function selectionInsideEditor(editor, range) {
+    return editor.contains(range.commonAncestorContainer);
+}
+
+function maybeSaveStateAfterFormat(editor) {
+    const body = document.getElementById("doc-body");
+    if (editor === body) {
+        saveState();
+    }
+}
+
+/**
+ * Color de texto: envuelve la selección en un &lt;span&gt; (sin document.execCommand).
+ */
+function applyTextColor(color) {
+    const editor = getFormatTargetEditor();
+    if (!editor) {
+        return;
+    }
+    editor.focus();
+    const sel = window.getSelection();
+    if (!sel.rangeCount || sel.isCollapsed) {
+
+        return;
+    }
+    const range = sel.getRangeAt(0);
+    if (!selectionInsideEditor(editor, range)) {
+        alert("La selección debe estar dentro del encabezado, contenido o pie.");
+        return;
+    }
+    const span = document.createElement("span");
+    span.style.color = color;
+    try {
+        span.appendChild(range.extractContents());
+        range.insertNode(span);
+        range.setStartAfter(span);
+        range.collapse(true);
+        sel.removeAllRanges();
+        sel.addRange(range);
+        maybeSaveStateAfterFormat(editor);
+        updatePreview();
+    } catch (e) {
+        console.error("applyTextColor:", e);
+    }
+}
+
+/**
+ * Color de fondo del texto: envuelve la selección en un &lt;span&gt; (sin document.execCommand).
+ */
+function applyHighlightColor(color) {
+    const editor = getFormatTargetEditor();
+    if (!editor) {
+        return;
+    }
+    editor.focus();
+    const sel = window.getSelection();
+    if (!sel.rangeCount || sel.isCollapsed) {
+
+        return;
+    }
+    const range = sel.getRangeAt(0);
+    if (!selectionInsideEditor(editor, range)) {
+        alert("La selección debe estar dentro del encabezado, contenido o pie.");
+        return;
+    }
+    const span = document.createElement("span");
+    span.style.backgroundColor = color;
+    try {
+        span.appendChild(range.extractContents());
+        range.insertNode(span);
+        range.setStartAfter(span);
+        range.collapse(true);
+        sel.removeAllRanges();
+        sel.addRange(range);
+        maybeSaveStateAfterFormat(editor);
+        updatePreview();
+    } catch (e) {
+        console.error("applyHighlightColor:", e);
+    }
+}
+
+/**
+ * Misma idea que setBlockFormat en templateCreator: reemplaza o inserta H1–H6 / P.
+ */
+function setBlockFormatForActiveSection(tagName) {
+    const editor = getFormatTargetEditor();
+    if (!editor) {
+        alert("Selecciona un editor antes de aplicar formato.");
+        return;
+    }
+    editor.focus();
+    const sel = window.getSelection();
+    if (!sel.rangeCount) {
+        return;
+    }
+    const range = sel.getRangeAt(0);
+    if (!selectionInsideEditor(editor, range)) {
+        alert("Selecciona texto dentro del encabezado, contenido o pie.");
+        return;
+    }
+
+    let parentBlock = range.commonAncestorContainer;
+    if (parentBlock.nodeType === 3) {
+        parentBlock = parentBlock.parentNode;
+    }
+
+    const blockTags = ["H1", "H2", "H3", "H4", "H5", "H6", "P"];
+    const closestBlock = parentBlock.closest(blockTags.join(","));
+
+    const newBlock = document.createElement(tagName);
+    const container = document.getElementById("document-container");
+    const ff =
+        editor.style.fontFamily ||
+        (container && container.style.fontFamily) ||
+        templateFont ||
+        "Arial, sans-serif";
+    newBlock.style.fontFamily = ff;
+
+    if (closestBlock && editor.contains(closestBlock)) {
+        newBlock.innerHTML = closestBlock.innerHTML;
+        closestBlock.replaceWith(newBlock);
+        sel.removeAllRanges();
+        maybeSaveStateAfterFormat(editor);
+        updatePreview();
+    } else {
+        newBlock.appendChild(range.extractContents());
+        range.insertNode(newBlock);
+        sel.removeAllRanges();
+        maybeSaveStateAfterFormat(editor);
+        updatePreview();
+    }
+}
+
+/**
+ * Misma idea que setFontSize en templateCreator: &lt;span style="font-size"&gt;.
+ */
+function setFontSizeForActiveSection(size) {
+    const editor = getFormatTargetEditor();
+    if (!editor) {
+        alert("Selecciona un editor antes de cambiar el tamaño de fuente.");
+        return;
+    }
+    editor.focus();
+    const sel = window.getSelection();
+    if (!sel.rangeCount || sel.isCollapsed) {
+        alert("Selecciona texto para cambiar el tamaño.");
+        return;
+    }
+    const range = sel.getRangeAt(0);
+    if (!selectionInsideEditor(editor, range)) {
+        return;
+    }
+
+    const span = document.createElement("span");
+    span.style.fontSize = size;
+
+    try {
+        span.appendChild(range.extractContents());
+        range.insertNode(span);
+        range.setStartAfter(span);
+        range.collapse(true);
+        sel.removeAllRanges();
+        sel.addRange(range);
+        applyTemplateFont();
+        maybeSaveStateAfterFormat(editor);
+        updatePreview();
+    } catch (e) {
+        console.error("setFontSizeForActiveSection:", e);
+    }
+}
+
 const pageFormats = {
     A4: {
         width: 794,
@@ -161,6 +360,90 @@ function insertImageBase64() {
     input.click();
 }
 
+/**
+ * Logo institucional en el encabezado (misma lógica que templateCreator; sin enableImageControls — el resize global ya aplica).
+ */
+function insertHeaderImage() {
+
+    const container = document.getElementById("header-logo-container");
+
+    if (!container) {
+        return;
+    }
+
+    if (container.querySelector(".image-wrapper")) {
+        return;
+    }
+
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+
+    input.onchange = function () {
+
+        const file = input.files[0];
+        if (!file) {
+            return;
+        }
+
+        new Compressor(file, {
+            quality: 0.5,
+            maxWidth: 1024,
+
+            success(result) {
+
+                const reader = new FileReader();
+
+                reader.onload = function (e) {
+
+                    const wrapper = document.createElement("div");
+                    wrapper.className = "image-wrapper align-center";
+                    wrapper.setAttribute("contenteditable", "false");
+
+                    const imgContainer = document.createElement("div");
+                    imgContainer.className = "img-container";
+
+                    const img = document.createElement("img");
+                    img.src = e.target.result;
+
+                    imgContainer.appendChild(img);
+
+                    ["top-left", "top-right", "bottom-left", "bottom-right"].forEach(pos => {
+                        const handle = document.createElement("div");
+                        handle.className = "resize-handle " + pos;
+                        handle.setAttribute("data-html2canvas-ignore", "true");
+                        imgContainer.appendChild(handle);
+                    });
+
+                    const controlsBottom = document.createElement("div");
+                    controlsBottom.className = "image-controls-bottom";
+                    controlsBottom.setAttribute("data-html2canvas-ignore", "true");
+
+                    const deleteBtn = document.createElement("button");
+                    deleteBtn.textContent = "Eliminar imagen";
+                    deleteBtn.className = "image-control-delete";
+
+                    controlsBottom.appendChild(deleteBtn);
+
+                    wrapper.append(imgContainer, controlsBottom);
+                    container.appendChild(wrapper);
+
+                    deleteBtn.onclick = function () {
+                        wrapper.remove();
+                        updatePreview();
+                    };
+
+                    updatePreview();
+                };
+
+                reader.readAsDataURL(result);
+            }
+        });
+    };
+
+    input.click();
+}
+
 let historyStack = [];
 let historyIndex = -1;
 function commitChange() {
@@ -306,24 +589,33 @@ editor.addEventListener("input", function () {
 
 document.addEventListener("DOMContentLoaded", function () {
 
-    const editor = document.getElementById("doc-body");
-
-    if (editor) {
-        historyStack.push(editor.innerHTML);
-        historyIndex = 0;
+    const dh = document.getElementById("doc-header");
+    if (dh) {
+        defaultDocHeaderSnapshot = dh.innerHTML;
     }
 
-});
-
-document.addEventListener("DOMContentLoaded", function () {
+    const wrap = document.getElementById("document-container");
+    if (wrap) {
+        wrap.addEventListener("click", function (e) {
+            const sec = e.target.closest(".editor-section");
+            if (sec) {
+                activeFormatSection = sec;
+            }
+        });
+        wrap.addEventListener("focusin", function (e) {
+            const sec = e.target.closest(".editor-section");
+            if (sec) {
+                activeFormatSection = sec;
+            }
+        });
+    }
 
     const editor = document.getElementById("doc-body");
 
     if (editor) {
-
         historyStack.push(editor.innerHTML);
         historyIndex = 0;
-
+        activeFormatSection = editor;
     }
 
 });
@@ -1320,15 +1612,25 @@ function updatePreview() {
     preview.appendChild(documentWrapper);
 }
 
-["doc-header", "doc-body", "doc-footer"].forEach(id => {
-    document.getElementById(id).addEventListener("input", updatePreview);
+["doc-header", "doc-body"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+        el.addEventListener("input", updatePreview);
+    }
 });
 
 function clearDocument() {
 
-    ["doc-header", "doc-body", "doc-footer"].forEach(id => {
+    const headerEl = document.getElementById("doc-header");
+    if (headerEl) {
+        headerEl.innerHTML = defaultDocHeaderSnapshot || "";
+    }
+
+    ["doc-body", "doc-footer"].forEach(id => {
         const el = document.getElementById(id);
-        if (el) el.innerHTML = "";
+        if (el) {
+            el.innerHTML = "";
+        }
     });
 
 }
@@ -1522,7 +1824,10 @@ function renderTemplate(doc) {
     const footer = document.getElementById("doc-footer");
     const container = document.getElementById("document-container");
 
-    if (header) header.innerHTML = doc.header || "";
+    if (header) {
+        const rawHeader = doc.header && String(doc.header).trim();
+        header.innerHTML = rawHeader ? doc.header : (defaultDocHeaderSnapshot || "");
+    }
     if (body) body.innerHTML = doc.content || "";
     if (footer) footer.innerHTML = doc.footer || "";
 
@@ -1557,10 +1862,9 @@ function renderTemplate(doc) {
     sanitizeLoadedTables(body);
     sanitizeLoadedTables(footer);
 
-    // --- REACTIVAR EDICIÓN DE TABLAS ---
+    // --- REACTIVAR EDICIÓN DE TABLAS (el pie es solo lectura en esta página) ---
     enableTableEditing(header);
     enableTableEditing(body);
-    enableTableEditing(footer);
 
 }
 
@@ -1595,15 +1899,31 @@ async function loadReportToEdit(id) {
         document.body.dataset.baseTemplateId = report.baseTemplate;
 
         // Inyectamos el contenido en los 3 editores específicos
-        if (report.header) {
-            document.getElementById('doc-header').innerHTML = report.header;
+        const headerEl = document.getElementById('doc-header');
+        const bodyEl = document.getElementById('doc-body');
+        const footerEl = document.getElementById('doc-footer');
+
+        if (headerEl) {
+            const rawH = report.header && String(report.header).trim();
+            headerEl.innerHTML = rawH ? report.header : (defaultDocHeaderSnapshot || "");
+            sanitizeHeaderLogoButton(headerEl);
+            sanitizeLoadedImages(headerEl);
+            sanitizeLoadedTables(headerEl);
+            enableTableEditing(headerEl);
         }
-        if (report.content) {
-            document.getElementById('doc-body').innerHTML = report.content;
+        if (bodyEl && report.content) {
+            bodyEl.innerHTML = report.content;
+            sanitizeLoadedImages(bodyEl);
+            sanitizeLoadedTables(bodyEl);
+            enableTableEditing(bodyEl);
         }
-        if (report.footer) {
-            document.getElementById('doc-footer').innerHTML = report.footer;
+        if (footerEl && report.footer) {
+            footerEl.innerHTML = report.footer;
+            sanitizeLoadedImages(footerEl);
+            sanitizeLoadedTables(footerEl);
         }
+
+        updatePreview();
 
         console.log("Reporte cargado exitosamente en los editores.");
 

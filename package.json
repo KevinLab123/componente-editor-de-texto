@@ -5,7 +5,8 @@
   "main": "api.js",
   "scripts": {
     "dev": "nodemon index.js",
-    "start": "node index.js"
+    "start": "node index.js",
+    "test:crypto": "node scripts/verify-crypto-setup.js"
   },
   "repository": {
     "type": "git",
@@ -19,6 +20,7 @@
   "homepage": "https://github.com/KevinLab123/componente-editor-de-texto#readme",
   "dependencies": {
     "bootstrap-icons": "^1.13.1",
+    "crypto-js": "^4.2.0",
     "cors": "^2.8.6",
     "dotenv": "^17.2.4",
     "express": "^5.2.1",

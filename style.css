@@ -16,6 +16,16 @@ min-height: 29.7cm;
 
 }
 
+/* Pie de página solo lectura (p. ej. templateHandler) */
+.footer-readonly {
+    cursor: default;
+    min-height: 80px;
+    background-color: #f8f9fa;
+    border-radius: 0.375rem;
+    padding: 0.75rem;
+    border: 1px solid #dee2e6;
+}
+
 [contenteditable="true"] {
 cursor: text;
 }

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 
 <head>
 <meta charset="UTF-8">
@@ -19,6 +19,43 @@
 <body class="bg-light">
 
 <div class="container-fluid py-3">
+
+<!-- Barra superior: Archivo, formato de bloque, tamaño y colores (implementación manual, sin document.execCommand) -->
+<div class="row mb-3 sticky-toolbar">
+    <div class="col">
+        <div class="card shadow-sm">
+            <div class="card-body d-flex gap-3 align-items-center flex-wrap">
+                <select class="form-select w-auto" onchange="handleFileMenu(this.value); this.selectedIndex=0;">
+                    <option hidden selected>Archivo</option>
+                    <option value="new">Nuevo</option>
+                    <option value="pdf">Guardar PDF</option>
+                    <option value="save">Guardar documento</option>
+                </select>
+                <select class="form-select w-auto" onchange="setBlockFormatForActiveSection(this.value); this.selectedIndex=0;">
+                    <option hidden selected>Formato</option>
+                    <option value="h1">Encabezado 1</option>
+                    <option value="h2">Encabezado 2</option>
+                    <option value="h3">Encabezado 3</option>
+                    <option value="h4">Encabezado 4</option>
+                    <option value="h5">Encabezado 5</option>
+                    <option value="h6">Encabezado 6</option>
+                    <option value="p">Párrafo</option>
+                </select>
+                <select class="form-select w-auto" onchange="setFontSizeForActiveSection(this.value); this.selectedIndex=0;">
+                    <option hidden selected>Tamaño</option>
+                    <option value="10px">Pequeño</option>
+                    <option value="12px">Normal</option>
+                    <option value="18px">Grande</option>
+                    <option value="24px">Extra grande</option>
+                </select>
+                <input type="color" class="form-control form-control-color" title="Color de texto"
+                    oninput="applyTextColor(this.value)">
+                <input type="color" class="form-control form-control-color" title="Color de fondo"
+                    oninput="applyHighlightColor(this.value)">
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- TOOLBAR PRINCIPAL -->
 <div class="card shadow-sm mb-3">
@@ -45,7 +82,7 @@ Cargar Plantilla
 
 <div id="document-container" class="document-page">
 
-<!-- ENCABEZADO -->
+<!-- ENCABEZADO (misma estructura que templateCreator, sin barra de herramientas de edición enriquecida) -->
 <div class="card shadow-sm mb-3">
 
 <div class="card-header bg-light fw-semibold">
@@ -53,9 +90,35 @@ Encabezado
 </div>
 
 <div class="card-body">
-<div id="doc-header"
-     class="editor-section"
-     contenteditable="true">
+<div id="doc-header" class="form-control editor-section" style="min-height:150px;">
+
+    <table class="doc-header-table">
+        <tr>
+            <td colspan="2" class="logo-cell">
+                <div id="header-logo-container" class="header-logo-container"></div>
+                <button id="insert-header-logo-btn" class="btn btn-outline-secondary"
+                    type="button" data-html2canvas-ignore="true" onclick="insertHeaderImage()">
+                    <i class="bi bi-image"></i> Insertar Logo
+                </button>
+            </td>
+        </tr>
+        <tr>
+            <td class="label-cell">Consecutivo:</td>
+            <td class="value-cell" contenteditable="true" data-variable="consecutivo"></td>
+        </tr>
+        <tr>
+            <td class="label-cell">Departamento:</td>
+            <td class="value-cell" contenteditable="true" data-variable="departamento"></td>
+        </tr>
+        <tr>
+            <td class="label-cell">Fecha:</td>
+            <td class="value-cell" contenteditable="true" data-variable="fecha"></td>
+        </tr>
+        <tr>
+            <td colspan="2" class="title-cell" contenteditable="true" data-variable="titulo"></td>
+        </tr>
+    </table>
+
 </div>
 </div>
 
@@ -176,7 +239,9 @@ Pie de página
 <div class="card-body">
 
 <div id="doc-footer"
-     class="editor-section footer-section">
+     class="footer-section footer-readonly"
+     contenteditable="false"
+     aria-readonly="true">
 </div>
 
 </div>
