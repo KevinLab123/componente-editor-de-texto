@@ -1,12 +1,14 @@
 const API_URL = 'http://localhost:3000';
 let reportToDelete = null;
 
+/** Lista en memoria para abrir la vista previa sin repetir fetch */
+let allReports = [];
+
 document.addEventListener('DOMContentLoaded', () => {
     loadReports();
     setupEventListeners();
 });
 
-// 1. CARGAR TODOS LOS REPORTES
 // 1. CARGAR TODOS LOS REPORTES
 async function loadReports() {
     const tbody = document.getElementById('report-list-body');
@@ -14,6 +16,7 @@ async function loadReports() {
     try {
         const response = await fetch(`${API_URL}/reports`);
         const reports = await response.json();
+        allReports = Array.isArray(reports) ? reports : [];
 
         tbody.innerHTML = ''; 
 
@@ -43,6 +46,9 @@ async function loadReports() {
                 </td>
                 <td class="text-center">
                     <div class="btn-group table-actions">
+                        <button type="button" class="btn btn-outline-info" onclick="previewReport(${report.id})" title="Vista previa PDF">
+                            <i class="bi bi-file-earmark-pdf"></i>
+                        </button>
                         <button class="btn btn-outline-primary" onclick="modifyReport(${report.id})" title="Modificar Reporte">
                             <i class="bi bi-pencil-square"></i>
                         </button>
@@ -116,6 +122,38 @@ function setupEventListeners() {
     if (confirmBtn) {
         confirmBtn.addEventListener('click', confirmDeleteReport);
     }
+}
+
+/**
+ * Abre el PDF almacenado en report.preview (data URI base64), igual que en templateSelector.
+ */
+function previewReport(id) {
+    const report = allReports.find((r) => r.id === id);
+    if (!report || !report.preview) {
+        alert(
+            "Este reporte no tiene vista previa PDF. Ábrelo en el editor, guarda de nuevo y se generará el preview."
+        );
+        return;
+    }
+
+    const modalElement = document.getElementById("previewReportModal");
+    const pdfViewer = document.getElementById("report-pdf-viewer");
+    const modalTitle = document.getElementById("previewReportModalLabel");
+
+    const viewOptions = "#toolbar=0&navpanes=0&view=FitH";
+    pdfViewer.src = report.preview + viewOptions;
+    modalTitle.textContent = `Vista previa — Reporte #${report.id}`;
+
+    const modalInstance = bootstrap.Modal.getOrCreateInstance(modalElement);
+    modalInstance.show();
+
+    modalElement.addEventListener(
+        "hidden.bs.modal",
+        () => {
+            pdfViewer.src = "";
+        },
+        { once: true }
+    );
 }
 
 function modifyReport(id) {

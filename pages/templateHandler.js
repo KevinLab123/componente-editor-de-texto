@@ -1591,6 +1591,45 @@ function saveAsPDF() {
             .save();
 }
 
+/**
+ * Genera el PDF del área de previsualización como data URI (base64), igual que en templateCreator.
+ */
+async function generateReportPreviewBase64() {
+    const previewElement = document.getElementById("pdf-preview");
+    if (!previewElement) {
+        return "";
+    }
+
+    const rect = previewElement.getBoundingClientRect();
+    const width = Math.max(rect.width, 1);
+    const height = Math.max(rect.height, 1);
+
+    const options = {
+        margin: 0,
+        image: { type: "jpeg", quality: 0.95 },
+        html2canvas: {
+            scale: 2,
+            useCORS: true,
+            logging: false,
+            width,
+            height,
+            scrollX: 0,
+            scrollY: 0
+        },
+        jsPDF: {
+            unit: "px",
+            format: [width, height],
+            orientation: "portrait",
+            hotfixes: ["px_scaling"]
+        }
+    };
+
+    return await html2pdf()
+        .set(options)
+        .from(previewElement)
+        .outputPdf("datauristring");
+}
+
 function buildCleanSection(editorId) {
 
     const original = document.getElementById(editorId);
@@ -1833,6 +1872,15 @@ async function saveReport() {
     }
 
     try {
+        updatePreview();
+
+        let pdfBase64 = "";
+        try {
+            pdfBase64 = await generateReportPreviewBase64();
+        } catch (e) {
+            console.error("Error generando preview del reporte:", e);
+        }
+
         // 1. Consultar reportes actuales para calcular el siguiente ID
         const response = await fetch(`${API_URL}/reports`);
         const reports = await response.json();
@@ -1846,15 +1894,15 @@ async function saveReport() {
             const contentHTML = document.getElementById('doc-body').innerHTML;
             const footerHTML = document.getElementById('doc-footer').innerHTML;
 
-        // 2. Preparar el objeto para la DB
-        // Enviamos 'N/A' o un string vacío en consecutive para que el INSERT funcione
+        // 2. Preparar el objeto para la DB (preview = PDF en base64, data URI)
         const reportBody = {
             id: nextId,
             baseTemplate: currentBaseTemplateId,
             consecutive: "SIN_CONSECUTIVO" ,
             header: headerHTML,
             content: contentHTML,
-            footer: footerHTML
+            footer: footerHTML,
+            preview: pdfBase64
         };
 
         // 3. Petición POST a la API
@@ -2000,13 +2048,23 @@ async function updateReport() {
         return; 
     }
 
+    updatePreview();
+
+    let pdfBase64 = "";
+    try {
+        pdfBase64 = await generateReportPreviewBase64();
+    } catch (e) {
+        console.error("Error generando preview del reporte:", e);
+    }
+
     // Preparamos el objeto con la estructura de la tabla 'reports'
     const updatedReport = {
-        baseTemplate: parseInt(document.body.dataset.baseTemplateId),
+        baseTemplate: parseInt(document.body.dataset.baseTemplateId, 10),
         consecutive: "ACTUALIZADO", // O el valor que manejes en tu lógica
         header: document.getElementById('doc-header').innerHTML,
         content: document.getElementById('doc-body').innerHTML,
-        footer: document.getElementById('doc-footer').innerHTML
+        footer: document.getElementById('doc-footer').innerHTML,
+        preview: pdfBase64
     };
 
     try {

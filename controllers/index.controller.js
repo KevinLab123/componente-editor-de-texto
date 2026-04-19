@@ -115,13 +115,13 @@ const updateDocument = async (req, res) => {
 }
 
 const createReport = async (req, res) => {
-    // Extraemos el id, baseTemplate y consecutive del cuerpo de la petición
-    const { id, baseTemplate, consecutive, header, content, footer } = req.body;
+    const { id, baseTemplate, consecutive, header, content, footer, preview } = req.body;
 
     try {
         const response = await pool.query(
-            'INSERT INTO reports (id, "baseTemplate", consecutive, header, content, footer) VALUES ($1, $2, $3,$4,$5,$6) RETURNING *',
-            [id, baseTemplate, consecutive, header, content, footer]
+            `INSERT INTO reports (id, "baseTemplate", consecutive, header, content, footer, preview)
+             VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+            [id, baseTemplate, consecutive, header, content, footer, preview ?? null]
         );
 
         console.log("Reporte creado:", response.rows[0]);
@@ -203,32 +203,34 @@ const deleteReport = async (req, res) => {
 
 const updateReport = async (req, res) => {
     const id = req.params.id;
-    const { 
-        baseTemplate, 
-        consecutive, 
-        header, 
-        content, 
-        footer 
+    const {
+        baseTemplate,
+        consecutive,
+        header,
+        content,
+        footer,
+        preview
     } = req.body;
 
     try {
-        // Agregamos comillas dobles a "baseTemplate" para respetar la mayúscula
         const query = `
             UPDATE reports 
             SET "baseTemplate" = $1, 
                 consecutive = $2, 
                 header = $3, 
                 content = $4, 
-                footer = $5
-            WHERE id = $6
+                footer = $5,
+                preview = $6
+            WHERE id = $7
         `;
 
         const values = [
-            baseTemplate, 
-            consecutive, 
-            header, 
-            content, 
-            footer, 
+            baseTemplate,
+            consecutive,
+            header,
+            content,
+            footer,
+            preview ?? null,
             id
         ];
 
