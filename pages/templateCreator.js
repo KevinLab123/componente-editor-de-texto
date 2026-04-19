@@ -1,6 +1,6 @@
 function formatDoc(cmd, value=null) {
     if (!activeEditor){
-        alert("Selecciona un editor antes de insertar la tabla.");
+        notifyWarning(UI_HINT.activateEditor);
         return
     };
     const editor = activeEditor;
@@ -115,7 +115,7 @@ async function updateTemplate() {
     const id = document.body.dataset.editingId;
     
     if (!id) {
-        alert("No se pudo identificar la plantilla para actualizar.");
+        notifyWarning("No se pudo identificar la plantilla para actualizar.");
         return; 
     }
         let pdfBase64 = "";
@@ -151,14 +151,14 @@ async function updateTemplate() {
         const result = await response.json();
 
         if (response.ok) {
-            alert(" Cambios guardados correctamente");
+            notifySuccess("Cambios guardados correctamente");
         } else {
             console.error("Respuesta del servidor:", result);
             throw new Error("Error en la actualización");
         }
     } catch (error) {
         console.error("Error técnico:", error);
-        alert(" Error al conectar con el servidor.");
+        notifyError("Error al conectar con el servidor.");
     }
 }
 
@@ -185,9 +185,20 @@ function handleFileMenu(option) {
 }
 
 function bold() {
+    if (!activeEditor) {
+        notifyWarning(UI_HINT.activateEditor);
+        return;
+    }
     const sel = window.getSelection();
-    if (!sel.rangeCount) return;
+    if (!sel.rangeCount || sel.isCollapsed) {
+        notifyWarning(UI_HINT.selectNonEmptyText);
+        return;
+    }
     const range = sel.getRangeAt(0);
+    if (!activeEditor.contains(range.commonAncestorContainer)) {
+        notifyWarning(UI_HINT.selectContentArea);
+        return;
+    }
     const parent = range.commonAncestorContainer.parentElement;
 
     if (parent.closest('strong')) {
@@ -218,10 +229,21 @@ function bold() {
 }
 
 function underline() {
+    if (!activeEditor) {
+        notifyWarning(UI_HINT.activateEditor);
+        return;
+    }
     const sel = window.getSelection();
-    if (!sel.rangeCount) return;
+    if (!sel.rangeCount || sel.isCollapsed) {
+        notifyWarning(UI_HINT.selectNonEmptyText);
+        return;
+    }
 
     const range = sel.getRangeAt(0);
+    if (!activeEditor.contains(range.commonAncestorContainer)) {
+        notifyWarning(UI_HINT.selectContentArea);
+        return;
+    }
     const parent = range.commonAncestorContainer.nodeType === 3 
         ? range.commonAncestorContainer.parentElement 
         : range.commonAncestorContainer;
@@ -256,10 +278,21 @@ function underline() {
 }
 
 function italic() {
+    if (!activeEditor) {
+        notifyWarning(UI_HINT.activateEditor);
+        return;
+    }
     const sel = window.getSelection();
-    if (!sel.rangeCount) return;
+    if (!sel.rangeCount || sel.isCollapsed) {
+        notifyWarning(UI_HINT.selectNonEmptyText);
+        return;
+    }
 
     const range = sel.getRangeAt(0);
+    if (!activeEditor.contains(range.commonAncestorContainer)) {
+        notifyWarning(UI_HINT.selectContentArea);
+        return;
+    }
     const parent = range.commonAncestorContainer.nodeType === 3 
         ? range.commonAncestorContainer.parentElement 
         : range.commonAncestorContainer;
@@ -295,7 +328,7 @@ function italic() {
 function strikethrough() {
 
     if (!activeEditor){
-        alert("Selecciona un editor antes de aplicar formato.");
+        notifyWarning("Selecciona un editor antes de aplicar formato.");
         return;
     }
 
@@ -303,7 +336,10 @@ function strikethrough() {
     editor.focus();
 
     const sel = window.getSelection();
-    if (!sel.rangeCount || sel.isCollapsed) return;
+    if (!sel.rangeCount || sel.isCollapsed) {
+        notifyWarning(UI_HINT.selectNonEmptyText);
+        return;
+    }
 
     const range = sel.getRangeAt(0);
 
@@ -354,12 +390,18 @@ function strikethrough() {
 
 function alignText(mode) {
 
-    if (!activeEditor) return;
+    if (!activeEditor) {
+        notifyWarning(UI_HINT.activateEditor);
+        return;
+    }
 
     activeEditor.focus();
 
     const sel = window.getSelection();
-    if (!sel.rangeCount) return;
+    if (!sel.rangeCount) {
+        notifyWarning(UI_HINT.selectTextAlign);
+        return;
+    }
 
     const range = sel.getRangeAt(0);
 
@@ -369,7 +411,10 @@ function alignText(mode) {
         node = node.parentElement;
     }
 
-    if (!activeEditor.contains(node)) return;
+    if (!activeEditor.contains(node)) {
+        notifyWarning(UI_HINT.selectContentArea);
+        return;
+    }
 
     let block = node.closest('p, h1, h2, h3, h4, h5, h6, li');
 
@@ -393,6 +438,8 @@ function alignText(mode) {
     if (before !== after) {
         saveState();
         updatePreview();
+    } else {
+        notifyInfo("Esa alineación ya está aplicada o no hubo cambios visibles en el bloque.");
     }
 }
 
@@ -433,10 +480,13 @@ function setFontFamily(font) {
 }
 
 function addLink() {
-    if (!activeEditor) return;
+    if (!activeEditor) {
+        notifyWarning(UI_HINT.activateEditor);
+        return;
+    }
     const sel = window.getSelection();
     if (!sel.rangeCount || sel.isCollapsed) {
-        alert("Selecciona el texto que deseas enlazar.");
+        notifyWarning("Selecciona el texto que deseas enlazar.");
         return;
     }
 
@@ -447,7 +497,7 @@ function addLink() {
 
     //  Si ya está dentro de un enlace → no hacer nada
     if (parent.closest("a")) {
-        alert("La selección ya está enlazada.");
+        notifyWarning("La selección ya está enlazada.");
         return;
     }
 
@@ -807,7 +857,7 @@ function saveAsPDF(action) {
 function openButtonModal() {
 
     if (!activeEditor){
-        alert("Selecciona un editor antes de insertar el botón.");
+        notifyWarning("Selecciona un editor antes de insertar el botón.");
         return
     };
     const editor = activeEditor;
@@ -825,7 +875,7 @@ function openButtonModal() {
 
 function insertButton() {
   if (!activeEditor) {
-    alert("Selecciona un editor antes de insertar el botón.");
+    notifyWarning("Selecciona un editor antes de insertar el botón.");
     return;
   }
   const editor = activeEditor;
@@ -835,7 +885,7 @@ function insertButton() {
 
   const label = document.getElementById("btnLabel").value.trim();
   if (!label) {
-    alert("Debe indicar un texto");
+    notifyWarning("Debe indicar un texto");
     return;
   }
 
@@ -900,9 +950,20 @@ function insertButton() {
 }
 
 function toggleList(type) {
+    if (!activeEditor) {
+        notifyWarning(UI_HINT.activateEditor);
+        return;
+    }
     const sel = window.getSelection();
-    if (!sel.rangeCount) return;
+    if (!sel.rangeCount || sel.isCollapsed) {
+        notifyWarning(UI_HINT.listNeedSelection);
+        return;
+    }
     const range = sel.getRangeAt(0);
+    if (!activeEditor.contains(range.commonAncestorContainer)) {
+        notifyWarning(UI_HINT.selectContentArea);
+        return;
+    }
     const parent = range.commonAncestorContainer.nodeType === 3 
         ? range.commonAncestorContainer.parentElement : range.commonAncestorContainer;
 
@@ -924,13 +985,15 @@ function toggleList(type) {
         range.insertNode(newList);
     }
     sel.removeAllRanges();
+    saveState();
     updatePreview();
+    notifyInfo("Lista actualizada.");
 }
 
 function setFontSize(size) {
 
     if (!activeEditor){
-        alert("Selecciona un editor antes de cambiar el tamaño de fuente.");
+        notifyWarning("Selecciona un editor antes de cambiar el tamaño de fuente.");
         return;
     }
 
@@ -938,7 +1001,10 @@ function setFontSize(size) {
     editor.focus();
 
     const sel = window.getSelection();
-    if (!sel.rangeCount || sel.isCollapsed) return;
+    if (!sel.rangeCount || sel.isCollapsed) {
+        notifyWarning(UI_HINT.fontSizeNeedSelection);
+        return;
+    }
 
     const range = sel.getRangeAt(0);
     const span = document.createElement('span');
@@ -954,10 +1020,12 @@ function setFontSize(size) {
         range.collapse(true);
         sel.removeAllRanges();
         sel.addRange(range);
+        notifyInfo("Tamaño de fuente aplicado a la selección.");
         saveState();
         updatePreview();
     } catch (e) {
         console.error("Error al cambiar el tamaño de fuente:", e);
+        notifyError("No se pudo aplicar el tamaño de fuente.");
     }
 
     // Solo si existe esta función
@@ -968,13 +1036,16 @@ function setFontSize(size) {
 
 function setBlockFormat(tagName) {
  if (!activeEditor){
-        alert("Selecciona un editor antes de insertar el botón.");
+        notifyWarning("Selecciona un editor antes de insertar el botón.");
         return
     };
     const editor = activeEditor;
     editor.focus();
     const sel = window.getSelection();
-    if (!sel.rangeCount || !editor) return;
+    if (!sel.rangeCount || !editor) {
+        notifyWarning(UI_HINT.formatBlockNeedSelection);
+        return;
+    }
 
     const range = sel.getRangeAt(0);
     let parentBlock = range.commonAncestorContainer;
@@ -990,11 +1061,13 @@ function setBlockFormat(tagName) {
     if (closestBlock) {
         newBlock.innerHTML = closestBlock.innerHTML;
         closestBlock.replaceWith(newBlock);
+        notifyInfo("Formato de bloque aplicado (" + tagName.toUpperCase() + ").");
         saveState();
         updatePreview();
     } else {
         newBlock.appendChild(range.extractContents());
         range.insertNode(newBlock);
+        notifyInfo("Formato de bloque aplicado (" + tagName.toUpperCase() + ").");
         saveState();
         updatePreview();
     }
@@ -1007,7 +1080,7 @@ function getSelectedCell() {
 
     let node = selection.getRangeAt(0).startContainer;
 
-    while (node && node.nodeName !== "TD") {
+    while (node && node.nodeName !== "TD" && node.nodeName !== "TH") {
         node = node.parentNode;
     }
 
@@ -1018,7 +1091,7 @@ function mergeRight() {
 
     const td = getSelectedCell();
     if (!td) {
-        alert("Selecciona una celda primero.");
+        notifyWarning(UI_HINT.tableNeedCell + " " + UI_HINT.tableMergeExplain);
         return;
     }
 
@@ -1044,6 +1117,7 @@ function mergeRight() {
 
     // Expandir la celda seleccionada
     td.setAttribute("colspan", totalColumns);
+    notifySuccess("Celdas de la fila combinadas en una sola.");
     saveState();
     updatePreview();
 }
@@ -1121,7 +1195,7 @@ let startWidth = 0;
 let resizeCell = null;
 function insertTable() {
     if (!activeEditor){
-        alert("Selecciona un editor antes de insertar la tabla.");
+        notifyWarning("Selecciona un editor antes de insertar la tabla.");
         return;
     };
 
@@ -1230,12 +1304,14 @@ function insertTable() {
 
         saveState();
         updatePreview();
+        notifyInfo(UI_HINT.tableInserted);
     } else {
         editor.appendChild(spaceAbove);
         editor.appendChild(wrapper);
         editor.appendChild(spaceBelow);
         saveState();
         updatePreview();
+        notifyInfo(UI_HINT.tableInserted);
     }
 }
 
@@ -1245,6 +1321,7 @@ function insertHeaderImage() {
 
     // Si ya hay imagen, no hacer nada
     if (container.querySelector(".image-wrapper")) {
+        notifyInfo("Ya hay un logo en el encabezado. Elimínalo antes de insertar otro.");
         return;
     }
 
@@ -1325,7 +1402,7 @@ function insertHeaderImage() {
 function insertImageBase64() {
 
     if (!activeEditor) {
-        alert("Selecciona un editor antes de insertar la imagen.");
+        notifyWarning("Selecciona un editor antes de insertar la imagen.");
         return;
     }
 
@@ -1542,7 +1619,7 @@ async function saveContent() {
         });
 
         if (response.ok) {
-            alert("Plantilla y Preview guardados correctamente");
+            notifySuccess("Plantilla y preview guardados correctamente");
         }
     } catch (error) {
         console.error('Error guardando documento:', error);
@@ -1552,13 +1629,16 @@ async function saveContent() {
 
 function clearFormattingToParagraph() {
     if (!activeEditor){
-        alert("Selecciona un editor antes de insertar la tabla.");
+        notifyWarning(UI_HINT.activateEditor);
         return
     };
     const editor = activeEditor;
     editor.focus();
     const sel = window.getSelection();
-    if (!sel.rangeCount || !editor) return;
+    if (!sel.rangeCount || !editor) {
+        notifyWarning(UI_HINT.selectTextOrBlock);
+        return;
+    }
 
     const range = sel.getRangeAt(0);
 
@@ -1567,7 +1647,10 @@ function clearFormattingToParagraph() {
         node = node.parentNode;
     }
     const paragraph = node.closest('p, div, li, h1, h2, h3, h4, h5, h6');
-    if (!paragraph || !editor.contains(paragraph)) return;
+    if (!paragraph || !editor.contains(paragraph)) {
+        notifyWarning("Coloca el cursor dentro de un párrafo, título o elemento de lista.");
+        return;
+    }
     //ZONAS PROTEGIDAS
     const protectedSelector = `
         table, thead, tbody, tfoot, tr, td, th,
@@ -1579,7 +1662,7 @@ function clearFormattingToParagraph() {
 
     // Si el párrafo está dentro de zona protegida → salir
     if (paragraph.closest(protectedSelector)) {
-        console.warn("Zona protegida — no se limpia formato");
+        notifyInfo(UI_HINT.protectedNoClear);
         return;
     }
 
@@ -1622,6 +1705,7 @@ function clearFormattingToParagraph() {
     newRange.collapse(false);
     sel.addRange(newRange);
     setFontFamily(currentFont);
+    notifySuccess("Formato del párrafo limpiado.");
 }
 
 document.addEventListener("mousemove", function(e){

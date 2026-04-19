@@ -54,12 +54,12 @@ function applyTextColor(color) {
     editor.focus();
     const sel = window.getSelection();
     if (!sel.rangeCount || sel.isCollapsed) {
-
+        notifyWarning(UI_HINT.colorNeedSelection);
         return;
     }
     const range = sel.getRangeAt(0);
     if (!selectionInsideEditor(editor, range)) {
-        alert("La selección debe estar dentro del encabezado, contenido o pie.");
+        notifyWarning("La selección debe estar dentro del encabezado, contenido o pie.");
         return;
     }
     const span = document.createElement("span");
@@ -73,6 +73,7 @@ function applyTextColor(color) {
         sel.addRange(range);
         maybeSaveStateAfterFormat(editor);
         updatePreview();
+        notifyInfo("Color de texto aplicado.");
     } catch (e) {
         console.error("applyTextColor:", e);
     }
@@ -89,12 +90,12 @@ function applyHighlightColor(color) {
     editor.focus();
     const sel = window.getSelection();
     if (!sel.rangeCount || sel.isCollapsed) {
-
+        notifyWarning(UI_HINT.colorNeedSelection);
         return;
     }
     const range = sel.getRangeAt(0);
     if (!selectionInsideEditor(editor, range)) {
-        alert("La selección debe estar dentro del encabezado, contenido o pie.");
+        notifyWarning("La selección debe estar dentro del encabezado, contenido o pie.");
         return;
     }
     const span = document.createElement("span");
@@ -108,6 +109,7 @@ function applyHighlightColor(color) {
         sel.addRange(range);
         maybeSaveStateAfterFormat(editor);
         updatePreview();
+        notifyInfo("Color de fondo aplicado al texto seleccionado.");
     } catch (e) {
         console.error("applyHighlightColor:", e);
     }
@@ -119,17 +121,18 @@ function applyHighlightColor(color) {
 function setBlockFormatForActiveSection(tagName) {
     const editor = getFormatTargetEditor();
     if (!editor) {
-        alert("Selecciona un editor antes de aplicar formato.");
+        notifyWarning("Selecciona un editor antes de aplicar formato.");
         return;
     }
     editor.focus();
     const sel = window.getSelection();
     if (!sel.rangeCount) {
+        notifyWarning(UI_HINT.formatBlockNeedSelection);
         return;
     }
     const range = sel.getRangeAt(0);
     if (!selectionInsideEditor(editor, range)) {
-        alert("Selecciona texto dentro del encabezado, contenido o pie.");
+        notifyWarning("Selecciona texto dentro del encabezado, contenido o pie.");
         return;
     }
 
@@ -156,12 +159,14 @@ function setBlockFormatForActiveSection(tagName) {
         sel.removeAllRanges();
         maybeSaveStateAfterFormat(editor);
         updatePreview();
+        notifyInfo("Formato de bloque aplicado (" + tagName.toUpperCase() + ").");
     } else {
         newBlock.appendChild(range.extractContents());
         range.insertNode(newBlock);
         sel.removeAllRanges();
         maybeSaveStateAfterFormat(editor);
         updatePreview();
+        notifyInfo("Formato de bloque aplicado (" + tagName.toUpperCase() + ").");
     }
 }
 
@@ -171,17 +176,18 @@ function setBlockFormatForActiveSection(tagName) {
 function setFontSizeForActiveSection(size) {
     const editor = getFormatTargetEditor();
     if (!editor) {
-        alert("Selecciona un editor antes de cambiar el tamaño de fuente.");
+        notifyWarning("Selecciona un editor antes de cambiar el tamaño de fuente.");
         return;
     }
     editor.focus();
     const sel = window.getSelection();
     if (!sel.rangeCount || sel.isCollapsed) {
-        alert("Selecciona texto para cambiar el tamaño.");
+        notifyWarning("Selecciona texto para cambiar el tamaño.");
         return;
     }
     const range = sel.getRangeAt(0);
     if (!selectionInsideEditor(editor, range)) {
+        notifyWarning(UI_HINT.selectContentArea);
         return;
     }
 
@@ -198,8 +204,10 @@ function setFontSizeForActiveSection(size) {
         applyTemplateFont();
         maybeSaveStateAfterFormat(editor);
         updatePreview();
+        notifyInfo("Tamaño de fuente aplicado a la selección.");
     } catch (e) {
         console.error("setFontSizeForActiveSection:", e);
+        notifyError("No se pudo aplicar el tamaño de fuente.");
     }
 }
 
@@ -228,7 +236,7 @@ function insertImageBase64() {
     const editor = document.getElementById("doc-body");
 
     if (!editor) {
-        alert("No se encontró el editor.");
+        notifyWarning("No se encontró el editor.");
         return;
     }
 
@@ -519,7 +527,7 @@ function addLink() {
     const sel = window.getSelection();
 
     if (!sel.rangeCount || sel.isCollapsed) {
-        alert("Selecciona el texto que deseas enlazar.");
+        notifyWarning("Selecciona el texto que deseas enlazar.");
         return;
     }
 
@@ -527,7 +535,7 @@ function addLink() {
 
     // Verificar que la selección esté dentro del editor
     if (!editor.contains(range.commonAncestorContainer)) {
-        alert("La selección debe estar dentro del documento.");
+        notifyWarning("La selección debe estar dentro del documento.");
         return;
     }
 
@@ -537,7 +545,7 @@ function addLink() {
 
     // Si ya está dentro de un enlace
     if (parent.closest("a")) {
-        alert("La selección ya está enlazada.");
+        notifyWarning("La selección ya está enlazada.");
         return;
     }
 
@@ -774,7 +782,7 @@ function getEditorSelection() {
     const range = sel.getRangeAt(0);
 
     if (!editor.contains(range.commonAncestorContainer)) {
-        alert("Selecciona texto dentro del documento.");
+        notifyWarning(UI_HINT.selectContentArea + " Usa el área «Contenido» para negrita, cursiva y listas.");
         return null;
     }
 
@@ -834,6 +842,11 @@ function bold() {
 
     const { sel, range } = selectionData;
 
+    if (range.collapsed) {
+        notifyWarning(UI_HINT.selectNonEmptyText);
+        return;
+    }
+
     const parent = range.commonAncestorContainer.parentElement;
 
     if (parent.closest('strong')) {
@@ -876,6 +889,11 @@ function underline() {
     if (!selectionData) return;
 
     const { sel, range } = selectionData;
+
+    if (range.collapsed) {
+        notifyWarning(UI_HINT.selectNonEmptyText);
+        return;
+    }
 
     const parent = range.commonAncestorContainer.nodeType === 3
         ? range.commonAncestorContainer.parentElement
@@ -922,6 +940,11 @@ function italic() {
 
     const { sel, range } = selectionData;
 
+    if (range.collapsed) {
+        notifyWarning(UI_HINT.selectNonEmptyText);
+        return;
+    }
+
     const parent = range.commonAncestorContainer.nodeType === 3
         ? range.commonAncestorContainer.parentElement
         : range.commonAncestorContainer;
@@ -966,6 +989,11 @@ function strikethrough() {
     if (!selectionData) return;
 
     const { sel, range } = selectionData;
+
+    if (range.collapsed) {
+        notifyWarning(UI_HINT.selectNonEmptyText);
+        return;
+    }
 
     const parent = range.commonAncestorContainer.nodeType === 3
         ? range.commonAncestorContainer.parentElement
@@ -1019,12 +1047,18 @@ function strikethrough() {
 function alignText(mode) {
 
     const selection = window.getSelection();
-    if (!selection.rangeCount) return;
+    if (!selection.rangeCount) {
+        notifyWarning(UI_HINT.selectTextAlign);
+        return;
+    }
 
     const range = selection.getRangeAt(0);
     const editor = document.getElementById("doc-body");
 
-    if (!editor.contains(range.commonAncestorContainer)) return;
+    if (!editor.contains(range.commonAncestorContainer)) {
+        notifyWarning(UI_HINT.selectContentArea);
+        return;
+    }
 
     const blocks = editor.querySelectorAll('p, h1, h2, h3, h4, h5, h6, li, div');
 
@@ -1046,6 +1080,9 @@ function alignText(mode) {
     if (changed) {
         updatePreview();
         saveState();
+        notifyInfo("Alineación aplicada al contenido seleccionado.");
+    } else {
+        notifyInfo(UI_HINT.alignNoChange);
     }
 
 }
@@ -1055,7 +1092,12 @@ function toggleList(type) {
     const selectionData = getEditorSelection();
     if (!selectionData) return;
 
-    const { selection, range } = selectionData;
+    const { sel, range } = selectionData;
+
+    if (range.collapsed) {
+        notifyWarning(UI_HINT.listNeedSelection);
+        return;
+    }
     const editor = document.getElementById("doc-body");
 
     const parent = range.commonAncestorContainer.nodeType === 3
@@ -1099,13 +1141,14 @@ function toggleList(type) {
 
     }
 
-    selection.removeAllRanges();
+    sel.removeAllRanges();
 
     const after = editor.innerHTML;
 
     if (before !== after) {
     updatePreview();
     saveState();
+    notifyInfo("Lista actualizada.");
     }
 
 }
@@ -1121,7 +1164,7 @@ function getCurrentCell() {
         node = node.parentNode;
     }
 
-    return node.closest("td");
+    return node.closest("td, th");
 }
 
 
@@ -1161,7 +1204,10 @@ function buildTableMatrix(table) {
 function mergeRight(table) {
 
     const td = getCurrentCell();
-    if (!td) return;
+    if (!td) {
+        notifyWarning(UI_HINT.tableNeedCell + " " + UI_HINT.tableMergeExplain);
+        return;
+    }
 
     const tr = td.parentElement;
 
@@ -1182,6 +1228,7 @@ function mergeRight(table) {
     });
 
     td.setAttribute("colspan", totalColumns);
+    notifySuccess("Celdas de la fila combinadas en una sola.");
     updatePreview();
     saveState();
 }
@@ -1189,7 +1236,10 @@ function mergeRight(table) {
 function addColumn(table) {
 
     const currentCell = getCurrentCell();
-    if (!currentCell) return;
+    if (!currentCell) {
+        notifyWarning(UI_HINT.tableNeedCell);
+        return;
+    }
 
     const matrix = buildTableMatrix(table);
 
@@ -1239,7 +1289,10 @@ function addColumn(table) {
 function deleteColumn(table){
 
     const currentCell = getCurrentCell();
-    if(!currentCell) return;
+    if(!currentCell) {
+        notifyWarning(UI_HINT.tableNeedCell);
+        return;
+    }
 
     const matrix = buildTableMatrix(table);
 
@@ -1284,7 +1337,10 @@ function deleteColumn(table){
 function deleteRow(table){
 
     const currentCell = getCurrentCell();
-    if(!currentCell) return;
+    if(!currentCell) {
+        notifyWarning(UI_HINT.tableNeedCell);
+        return;
+    }
 
     const matrix = buildTableMatrix(table);
 
@@ -1432,7 +1488,7 @@ function clearFormattingToParagraph() {
         if (!range.intersectsNode(block)) return;
 
         if (block.closest(protectedSelector)) {
-            console.warn("Zona protegida — no se limpia formato");
+            notifyInfo(UI_HINT.protectedNoClear);
             return;
         }
 
@@ -1492,7 +1548,10 @@ function clearFormattingToParagraph() {
 
     
 
-    if (!changed) return;
+    if (!changed) {
+        notifyInfo("No se eliminó formato: revisa que la selección incluya texto con estilo o que no esté en una zona protegida.");
+        return;
+    }
 
     sel.removeAllRanges();
 
@@ -1505,6 +1564,7 @@ function clearFormattingToParagraph() {
     applyTemplateFont();
     updatePreview();
     saveState();
+    notifySuccess("Formato limpiado en la selección.");
 }
 
 function saveAsPDF() {
@@ -1752,7 +1812,7 @@ async function loadTemplate() {
 
     } catch (error) {
         console.error("Error al cargar:", error);
-        alert("No se pudo cargar la plantilla seleccionada");
+        notifyError("No se pudo cargar la plantilla seleccionada");
     }
 }
 
@@ -1768,7 +1828,7 @@ window.onload = () => {
 const API_URL = 'http://localhost:3000';
 async function saveReport() {
     if (!currentBaseTemplateId) {
-        alert("Error: No hay una plantilla base cargada.");
+        notifyWarning("Error: No hay una plantilla base cargada.");
         return;
     }
 
@@ -1805,15 +1865,15 @@ async function saveReport() {
         });
 
         if (saveResponse.ok) {
-            alert(`Reporte guardado exitosamente con ID: ${nextId}`);
+            notifySuccess(`Reporte guardado exitosamente con ID: ${nextId}`);
         } else {
             const err = await saveResponse.json();
-            alert("Error al guardar: " + err.error);
+            notifyError("Error al guardar: " + err.error);
         }
 
     } catch (error) {
         console.error("Error en la operación:", error);
-        alert("Error de conexión con el servidor.");
+        notifyError("Error de conexión con el servidor.");
     }
 }
 
@@ -1936,7 +1996,7 @@ async function updateReport() {
     const id = document.body.dataset.editingReportId;
     
     if (!id) {
-        alert("Error: No se encontró el ID del reporte para actualizar.");
+        notifyWarning("Error: No se encontró el ID del reporte para actualizar.");
         return; 
     }
 
@@ -1957,7 +2017,7 @@ async function updateReport() {
         });
 
         if (response.ok) {
-            alert("¡Reporte actualizado correctamente!");
+            notifySuccess("¡Reporte actualizado correctamente!");
             // Opcional: Redirigir al dashboard tras guardar
             // window.location.href = 'reportDashboard.html';
         } else {
@@ -1966,7 +2026,7 @@ async function updateReport() {
         }
     } catch (error) {
         console.error("Error técnico al actualizar:", error);
-        alert("Error al guardar los cambios en el servidor.");
+        notifyError("Error al guardar los cambios en el servidor.");
     }
 }
 

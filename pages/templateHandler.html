@@ -57,26 +57,7 @@
     </div>
 </div>
 
-<!-- TOOLBAR PRINCIPAL -->
-<div class="card shadow-sm mb-3">
-<div class="card-body d-flex flex-wrap gap-2">
 
-<button onclick="saveAsPDF()" class="btn btn-primary" id="btn-generate-pdf">
-Generar PDF
-</button>
-
-<button onclick="handleSaveAction()" class="btn btn-success" id="btn-save">
-Guardar Documento
-</button>
-
-<button class="btn btn-secondary"
-id="btn-load-template"
-onclick="loadTemplate()">
-Cargar Plantilla
-</button>
-
-</div>
-</div>
 
 <div class="d-flex justify-content-center">
 
@@ -277,6 +258,8 @@ Pie de página
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/compressorjs@1.2.1/dist/compressor.min.js"></script>
+<script src="https://unpkg.com/@pablotheblink/flashyjs@1.0.5/flashy.js"></script>
+<script src="flashy-bridge.js"></script>
 
 <!-- Script -->
 <script src="templateHandler.js"></script>
