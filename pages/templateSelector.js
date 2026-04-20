@@ -3,6 +3,8 @@ let allTemplates = [];
 
 document.addEventListener('DOMContentLoaded', () => {
     const cardsContainer = document.getElementById('cards-container');
+    const nameSearchInput = document.getElementById('template-name-search');
+    const clearFiltersBtn = document.getElementById('template-search-clear');
 
     const loadTemplates = async () => {
         try {
@@ -11,7 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Guardamos en la variable global
             allTemplates = await response.json();
-            renderCards(allTemplates);
+            applyTemplateFilters();
         } catch (error) {
             console.error('Error:', error);
             cardsContainer.innerHTML = `
@@ -25,6 +27,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const renderCards = (templates) => {
         cardsContainer.innerHTML = ''; 
+
+        if (!templates || templates.length === 0) {
+            cardsContainer.innerHTML = `
+                <div class="col-12 text-center">
+                    <div class="alert alert-secondary mb-0">
+                        No hay plantillas que coincidan con los filtros actuales.
+                    </div>
+                </div>`;
+            return;
+        }
 
         templates.forEach((doc) => {
             const cardCol = document.createElement('div');
@@ -61,6 +73,26 @@ document.addEventListener('DOMContentLoaded', () => {
             cardsContainer.appendChild(cardCol);
         });
     };
+
+    const applyTemplateFilters = () => {
+        const nameTerm = (nameSearchInput?.value || '').trim().toLowerCase();
+
+        const filtered = allTemplates.filter((doc) => {
+            const nameValue = String(doc.name ?? '').toLowerCase();
+
+            const matchName = !nameTerm || nameValue.includes(nameTerm);
+
+            return matchName;
+        });
+
+        renderCards(filtered);
+    };
+
+    nameSearchInput?.addEventListener('input', applyTemplateFilters);
+    clearFiltersBtn?.addEventListener('click', () => {
+        if (nameSearchInput) nameSearchInput.value = '';
+        applyTemplateFilters();
+    });
 
     loadTemplates();
 });

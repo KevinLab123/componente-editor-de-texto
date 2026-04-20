@@ -12,6 +12,20 @@ let defaultDocHeaderSnapshot = "";
 
 const API_URL = "http://localhost:3000";
 
+/** Query requerida por el API para filtrar reportes según rol (admin/viewer ven todo; el resto solo lo suyo). */
+function buildReportAccessQuery() {
+    try {
+        const raw = localStorage.getItem("currentUser");
+        if (!raw) return "";
+        const u = JSON.parse(raw);
+        if (u == null || u.id == null) return "";
+        const role = u.role != null ? String(u.role) : "";
+        return `?role=${encodeURIComponent(role)}&userId=${encodeURIComponent(String(u.id))}`;
+    } catch {
+        return "";
+    }
+}
+
 function getCurrentUser() {
     try {
         const raw = localStorage.getItem("currentUser");
@@ -167,6 +181,139 @@ function getFormatTargetEditor() {
     return activeFormatSection || document.getElementById("doc-body");
 }
 
+function notifyHandlerMessage(kind, message) {
+    if (kind === "warning" && typeof notifyWarning === "function") {
+        notifyWarning(message);
+        return;
+    }
+    if (kind === "error" && typeof notifyError === "function") {
+        notifyError(message);
+        return;
+    }
+    if (kind === "success" && typeof notifySuccess === "function") {
+        notifySuccess(message);
+        return;
+    }
+    console[kind === "error" ? "error" : "log"](message);
+}
+
+function getActiveEditableHandlerSection() {
+    const sel = window.getSelection();
+    if (sel && sel.rangeCount > 0 && sel.anchorNode) {
+        const anchorEl = sel.anchorNode.nodeType === Node.ELEMENT_NODE
+            ? sel.anchorNode
+            : sel.anchorNode.parentElement;
+        const fromSelection = anchorEl && anchorEl.closest
+            ? anchorEl.closest(".editor-section")
+            : null;
+        if (fromSelection && fromSelection.isContentEditable) {
+            return fromSelection;
+        }
+    }
+
+    if (activeFormatSection && activeFormatSection.isContentEditable) {
+        return activeFormatSection;
+    }
+
+    const body = document.getElementById("doc-body");
+    return body && body.isContentEditable ? body : null;
+}
+
+function fallbackCopyText(text) {
+    const temp = document.createElement("textarea");
+    temp.value = text;
+    temp.setAttribute("readonly", "");
+    temp.style.position = "fixed";
+    temp.style.opacity = "0";
+    document.body.appendChild(temp);
+    temp.select();
+    document.execCommand("copy");
+    document.body.removeChild(temp);
+}
+
+function insertPlainTextAtSelection(editor, text) {
+    editor.focus();
+    if (document.queryCommandSupported && document.queryCommandSupported("insertText")) {
+        const inserted = document.execCommand("insertText", false, text);
+        if (inserted) return;
+    }
+
+    const sel = window.getSelection();
+    if (!sel) return;
+    let range;
+    if (!sel.rangeCount || !editor.contains(sel.getRangeAt(0).commonAncestorContainer)) {
+        range = document.createRange();
+        range.selectNodeContents(editor);
+        range.collapse(false);
+    } else {
+        range = sel.getRangeAt(0);
+    }
+
+    range.deleteContents();
+    const parts = String(text).split(/\r?\n/);
+    const frag = document.createDocumentFragment();
+    parts.forEach((part, idx) => {
+        if (idx > 0) frag.appendChild(document.createElement("br"));
+        frag.appendChild(document.createTextNode(part));
+    });
+    range.insertNode(frag);
+    range.collapse(false);
+    sel.removeAllRanges();
+    sel.addRange(range);
+}
+
+async function copyFromActiveHandlerSelection() {
+    const editor = getActiveEditableHandlerSection();
+    if (!editor) {
+        notifyHandlerMessage("warning", "Activa un editor para copiar.");
+        return;
+    }
+
+    const sel = window.getSelection();
+    const selectedText = sel ? sel.toString() : "";
+    if (!selectedText) {
+        notifyHandlerMessage("warning", "Selecciona texto antes de copiar.");
+        return;
+    }
+
+    try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(selectedText);
+        } else {
+            fallbackCopyText(selectedText);
+        }
+    } catch (error) {
+        try {
+            fallbackCopyText(selectedText);
+        } catch {
+            console.error(error);
+            notifyHandlerMessage("error", "No se pudo copiar el texto.");
+        }
+    }
+}
+
+async function pasteIntoActiveHandlerSection() {
+    const editor = getActiveEditableHandlerSection();
+    if (!editor) {
+        notifyHandlerMessage("warning", "Activa un editor para pegar.");
+        return;
+    }
+
+    try {
+        let text = "";
+        if (navigator.clipboard && navigator.clipboard.readText) {
+            text = await navigator.clipboard.readText();
+        }
+        if (!text) return;
+        insertPlainTextAtSelection(editor, text);
+        maybeSaveStateAfterFormat(editor);
+        updatePreview();
+    } catch (error) {
+        console.error(error);
+        notifyHandlerMessage("error", "No se pudo pegar desde el portapapeles.");
+    }
+}
+
 function handleFileMenu(option) {
     switch (option) {
         case "save":
@@ -180,10 +327,39 @@ function handleFileMenu(option) {
                 window.location.href = "templateSelector.html";
             }
             break;
+        case "copy":
+            copyFromActiveHandlerSelection();
+            break;
+        case "paste":
+            pasteIntoActiveHandlerSection();
+            break;
         default:
             break;
     }
 }
+
+document.addEventListener("keydown", async (e) => {
+    const isCopy = (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "c";
+    const isPaste = (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "v";
+    if (!isCopy && !isPaste) return;
+
+    const target = e.target;
+    if (target instanceof HTMLElement) {
+        const isFormField = ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName);
+        const inEditor = Boolean(target.closest(".editor-section"));
+        if (isFormField && !inEditor) return;
+    }
+
+    const editor = getActiveEditableHandlerSection();
+    if (!editor) return;
+
+    e.preventDefault();
+    if (isCopy) {
+        await copyFromActiveHandlerSelection();
+    } else {
+        await pasteIntoActiveHandlerSection();
+    }
+});
 
 function selectionInsideEditor(editor, range) {
     return editor.contains(range.commonAncestorContainer);
@@ -2029,6 +2205,12 @@ async function saveReport() {
         return;
     }
 
+    const accessQs = buildReportAccessQuery();
+    if (!accessQs) {
+        notifyWarning("No se pudo enviar tu sesión. Vuelve a iniciar sesión.");
+        return;
+    }
+
     try {
         updatePreview();
 
@@ -2039,22 +2221,11 @@ async function saveReport() {
             console.error("Error generando preview del reporte:", e);
         }
 
-        // 1. Consultar reportes actuales para calcular el siguiente ID
-        const response = await fetch(`${API_URL}/reports`);
-        const reports = await response.json();
+        const headerHTML = document.getElementById('doc-header').innerHTML;
+        const contentHTML = document.getElementById('doc-body').innerHTML;
+        const footerHTML = document.getElementById('doc-footer').innerHTML;
 
-        // Calcular ID: si no hay reportes empezamos en 1, sino Max + 1
-        const nextId = reports.length > 0 
-            ? Math.max(...reports.map(r => r.id)) + 1 
-            : 1;
-
-            const headerHTML = document.getElementById('doc-header').innerHTML;
-            const contentHTML = document.getElementById('doc-body').innerHTML;
-            const footerHTML = document.getElementById('doc-footer').innerHTML;
-
-        // 2. Preparar el objeto para la DB (preview = PDF en base64, data URI)
         const reportBody = {
-            id: nextId,
             baseTemplate: currentBaseTemplateId,
             consecutive: "SIN_CONSECUTIVO",
             header: headerHTML,
@@ -2066,18 +2237,19 @@ async function saveReport() {
             reviewed_by: null
         };
 
-        // 3. Petición POST a la API
-        const saveResponse = await fetch(`${API_URL}/reports`, {
+        const saveResponse = await fetch(`${API_URL}/reports${accessQs}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(reportBody)
         });
 
         if (saveResponse.ok) {
-            notifySuccess(`Reporte guardado exitosamente con ID: ${nextId}`);
+            const payload = await saveResponse.json().catch(() => ({}));
+            const newId = payload.body && payload.body.id != null ? payload.body.id : "?";
+            notifySuccess(`Reporte guardado exitosamente con ID: ${newId}`);
         } else {
-            const err = await saveResponse.json();
-            notifyError("Error al guardar: " + err.error);
+            const err = await saveResponse.json().catch(() => ({}));
+            notifyError("Error al guardar: " + (err.message || err.error || saveResponse.status));
         }
 
     } catch (error) {
@@ -2150,7 +2322,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
 async function loadReportToEdit(id) {
     try {
-        const response = await fetch(`${API_URL}/reports/${id}`);
+        const accessQs = buildReportAccessQuery();
+        if (!accessQs) {
+            notifyWarning("Inicia sesión para cargar el reporte.");
+            return;
+        }
+        const response = await fetch(`${API_URL}/reports/${id}${accessQs}`);
+        if (response.status === 403) {
+            notifyError("No tienes permiso para ver este reporte.");
+            return;
+        }
+        if (!response.ok) {
+            const err = await response.json().catch(() => ({}));
+            notifyError(err.message || "No se pudo cargar el reporte.");
+            return;
+        }
         const data = await response.json();
         
         // Normalizamos la respuesta (manejo de array o objeto único)
@@ -2235,12 +2421,23 @@ async function updateReport() {
         reviewed_by: meta.reviewed_by
     };
 
+    const accessQs = buildReportAccessQuery();
+    if (!accessQs) {
+        notifyWarning("No se pudo enviar tu sesión. Vuelve a iniciar sesión.");
+        return;
+    }
+
     try {
-        const response = await fetch(`${API_URL}/reports/${id}`, {
+        const response = await fetch(`${API_URL}/reports/${id}${accessQs}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(updatedReport)
         });
+
+        if (response.status === 403) {
+            notifyError("No tienes permiso para modificar este reporte.");
+            return;
+        }
 
         if (response.ok) {
             notifySuccess("¡Reporte actualizado correctamente!");

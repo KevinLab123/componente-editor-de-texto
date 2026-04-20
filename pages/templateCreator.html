@@ -16,7 +16,16 @@
     <title>Creador de Plantillas</title>
 </head>
 
-<body>
+<body class="bg-light">
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+        <div class="container-fluid d-flex flex-wrap align-items-center justify-content-between gap-2">
+            <a class="navbar-brand mb-0" href="#">Sistema de Documentación</a>
+            <button type="button" class="btn btn-outline-light btn-sm" data-bs-toggle="modal" data-bs-target="#backToMenuModal">
+                <i class="bi bi-house-door me-1"></i> Menú principal
+            </button>
+        </div>
+    </nav>
 
     <div class="container-fluid py-3">
 
@@ -32,6 +41,8 @@
                     <select class="form-select w-auto" onchange="handleFileMenu(this.value); this.selectedIndex=0;">
                         <option hidden selected>Archivo</option>
                         <option value="new">Nuevo</option>
+                        <option value="copy">Copiar (Ctrl+C)</option>
+                        <option value="paste">Pegar (Ctrl+V)</option>
                         <option value="pdf">Guardar PDF</option>
                         <option value="save">Guardar Plantilla</option>
                     </select>
@@ -107,6 +118,15 @@
                                 </button>
                                 <button class="btn btn-outline-secondary" onclick="redo()">
                                     <i class="bi bi-arrow-clockwise"></i>
+                                </button>
+                            </div>
+
+                            <div class="btn-group">
+                                <button class="btn btn-outline-secondary" onclick="copyFromActiveEditorSelection()" title="Copiar (Ctrl+C)">
+                                    <i class="bi bi-clipboard"></i>
+                                </button>
+                                <button class="btn btn-outline-secondary" onclick="pasteIntoActiveEditor()" title="Pegar (Ctrl+V)">
+                                    <i class="bi bi-clipboard-check"></i>
                                 </button>
                             </div>
 
@@ -239,6 +259,15 @@
                             </div>
 
                             <div class="btn-group">
+                                <button class="btn btn-outline-secondary" onclick="copyFromActiveEditorSelection()" title="Copiar (Ctrl+C)">
+                                    <i class="bi bi-clipboard"></i>
+                                </button>
+                                <button class="btn btn-outline-secondary" onclick="pasteIntoActiveEditor()" title="Pegar (Ctrl+V)">
+                                    <i class="bi bi-clipboard-check"></i>
+                                </button>
+                            </div>
+
+                            <div class="btn-group">
                                 <button class="btn btn-outline-secondary" onclick="clearFormattingToParagraph()">
                                     <i class="bi bi-eraser"></i>
                                 </button>
@@ -320,6 +349,15 @@
                                 </button>
                                 <button class="btn btn-outline-secondary" onclick="redo()">
                                     <i class="bi bi-arrow-clockwise"></i>
+                                </button>
+                            </div>
+
+                            <div class="btn-group">
+                                <button class="btn btn-outline-secondary" onclick="copyFromActiveEditorSelection()" title="Copiar (Ctrl+C)">
+                                    <i class="bi bi-clipboard"></i>
+                                </button>
+                                <button class="btn btn-outline-secondary" onclick="pasteIntoActiveEditor()" title="Pegar (Ctrl+V)">
+                                    <i class="bi bi-clipboard-check"></i>
                                 </button>
                             </div>
 
@@ -475,6 +513,24 @@
                     </button>
                 </div>
 
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="backToMenuModal" tabindex="-1" aria-labelledby="backToMenuModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="backToMenuModalLabel"><i class="bi bi-question-circle me-2"></i>Volver al menú principal</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    ¿Deseas salir del creador de plantillas y volver al menú principal? Si no has guardado la plantilla, los cambios sin guardar se perderán.
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="window.location.href='mainPage.html'">Sí, ir al menú</button>
+                </div>
             </div>
         </div>
     </div>

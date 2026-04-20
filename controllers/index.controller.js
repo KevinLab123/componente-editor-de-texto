@@ -1,5 +1,4 @@
-const{Pool}= require('pg');
-const { get } = require('../routes/router');
+const { Pool } = require('pg');
 
 const pool = new Pool({
     host: 'localhost',
@@ -8,6 +7,27 @@ const pool = new Pool({
     database: 'documents_bd',
     port: 5432
 });
+
+function parseReportAccessFromRequest(req) {
+    const role = String(req.query.role ?? '').trim();
+    const raw = req.query.userId;
+    let userId = null;
+    if (raw !== undefined && raw !== null && raw !== '') {
+        const n = parseInt(String(raw), 10);
+        userId = Number.isNaN(n) ? null : n;
+    }
+    const canViewAll = role === 'admin' || role === 'viewer';
+    return { role, userId, canViewAll };
+}
+
+function canAccessReportRow(row, access) {
+    if (!row) return false;
+    if (access.canViewAll) return true;
+    if (access.userId == null) return false;
+    const created = row.created_by;
+    if (created === null || created === undefined) return false;
+    return Number(created) === Number(access.userId);
+}
 
 const getDocuments = async (req, res) => {
    const response = await pool.query('SELECT * FROM documents');
@@ -53,10 +73,21 @@ const createDocument = async (req, res) => {
 
 
 const deleteDocument = async (req, res) => {
-    const id = req.params.id
-    const response = await pool.query('DELETE FROM documents WHERE id = $1', [id]);
-    console.log(response);
-    res.json(`Document with id ${id} deleted successfully`);
+    const role = String(req.query.role ?? '').trim();
+    if (role !== 'admin') {
+        return res.status(403).json({ message: 'Solo administradores pueden eliminar plantillas.' });
+    }
+    const id = req.params.id;
+    try {
+        const response = await pool.query('DELETE FROM documents WHERE id = $1', [id]);
+        if (response.rowCount === 0) {
+            return res.status(404).json({ message: 'Plantilla no encontrada' });
+        }
+        res.json({ message: `Plantilla ${id} eliminada correctamente` });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error al eliminar la plantilla' });
+    }
 }
 
 const updateDocument = async (req, res) => {
@@ -115,8 +146,8 @@ const updateDocument = async (req, res) => {
 }
 
 const createReport = async (req, res) => {
+    const access = parseReportAccessFromRequest(req);
     const {
-        id,
         baseTemplate,
         consecutive,
         header,
@@ -129,6 +160,23 @@ const createReport = async (req, res) => {
     } = req.body;
 
     try {
+        if (!access.canViewAll) {
+            if (access.userId == null) {
+                return res.status(403).json({ message: 'No autorizado: indica usuario en la petición.' });
+            }
+            if (created_by != null && Number(created_by) !== Number(access.userId)) {
+                return res.status(403).json({ message: 'No puedes crear reportes para otro usuario.' });
+            }
+        }
+
+        const maxRes = await pool.query('SELECT COALESCE(MAX(id), 0) AS max FROM reports');
+        const nextId = Number(maxRes.rows[0].max) + 1;
+
+        let effectiveCreatedBy = created_by ?? null;
+        if (!access.canViewAll) {
+            effectiveCreatedBy = access.userId;
+        }
+
         const response = await pool.query(
             `INSERT INTO reports (
                 id, "baseTemplate", consecutive, header, content, footer, preview,
@@ -139,7 +187,7 @@ const createReport = async (req, res) => {
                 $8, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, $9, $10
              ) RETURNING *`,
             [
-                id,
+                nextId,
                 baseTemplate,
                 consecutive,
                 header,
@@ -147,7 +195,7 @@ const createReport = async (req, res) => {
                 footer,
                 preview ?? null,
                 state ?? null,
-                created_by ?? null,
+                effectiveCreatedBy,
                 reviewed_by ?? null
             ]
         );
@@ -163,7 +211,7 @@ const createReport = async (req, res) => {
         
         // Manejo básico de error por si el ID ya existe
         if (error.code === '23505') {
-            return res.status(400).json({ message: `El ID ${id} ya existe.` });
+            return res.status(400).json({ message: 'Conflicto de ID al crear el reporte. Reintenta.' });
         }
 
         res.status(500).json({
@@ -174,13 +222,24 @@ const createReport = async (req, res) => {
 }
 
 const getReports = async (req, res) => {
+    const access = parseReportAccessFromRequest(req);
     try {
-        // Consultamos todos los registros de la tabla reports
-        // Usamos comillas dobles si quieres traer la columna con su nombre exacto
-        const response = await pool.query('SELECT * FROM reports');
-        
-        // Enviamos el arreglo de objetos directamente
-        res.status(200).json(response.rows);
+        if (access.canViewAll) {
+            const response = await pool.query('SELECT * FROM reports ORDER BY id ASC');
+            return res.status(200).json(response.rows);
+        }
+
+        if (access.userId == null) {
+            return res.status(400).json({
+                message: 'Se requiere userId y role en la petición para listar reportes.'
+            });
+        }
+
+        const response = await pool.query(
+            'SELECT * FROM reports WHERE created_by = $1 ORDER BY id ASC',
+            [access.userId]
+        );
+        return res.status(200).json(response.rows);
     } catch (error) {
         console.error("Error al obtener reportes:", error);
         res.status(500).json({
@@ -192,8 +251,8 @@ const getReports = async (req, res) => {
 
 const getReportById = async (req, res) => {
     const id = req.params.id;
+    const access = parseReportAccessFromRequest(req);
     try {
-        // Consultamos el reporte específico
         const response = await pool.query(
             'SELECT * FROM reports WHERE id = $1',[id]
         );
@@ -202,8 +261,12 @@ const getReportById = async (req, res) => {
             return res.status(404).json({ message: 'Reporte no encontrado' });
         }
 
-        // Devolvemos el primer (y único) resultado
-        res.json(response.rows[0]);
+        const row = response.rows[0];
+        if (!canAccessReportRow(row, access)) {
+            return res.status(403).json({ message: 'No autorizado para ver este reporte' });
+        }
+
+        res.json(row);
     } catch (error) {
         console.error(error);
         res.status(500).json({
@@ -215,10 +278,17 @@ const getReportById = async (req, res) => {
 
 const deleteReport = async (req, res) => {
     const id = req.params.id;
+    const access = parseReportAccessFromRequest(req);
     try {
+        if (access.role !== 'admin') {
+            return res.status(403).json({ message: 'Solo administradores pueden eliminar reportes.' });
+        }
+
         const result = await pool.query('DELETE FROM reports WHERE id = $1', [id]);
-        
-        // Es vital responder con un JSON para que response.ok sea true en el frontend
+        if (result.rowCount === 0) {
+            return res.status(404).json({ message: 'Reporte no encontrado' });
+        }
+
         res.status(200).json({ 
             message: `Reporte ${id} eliminado correctamente`,
             rowCount: result.rowCount 
@@ -231,6 +301,7 @@ const deleteReport = async (req, res) => {
 
 const updateReport = async (req, res) => {
     const id = req.params.id;
+    const access = parseReportAccessFromRequest(req);
     const {
         baseTemplate,
         consecutive,
@@ -243,6 +314,14 @@ const updateReport = async (req, res) => {
     } = req.body;
 
     try {
+        const existing = await pool.query('SELECT * FROM reports WHERE id = $1', [id]);
+        if (existing.rows.length === 0) {
+            return res.status(404).json({ message: "Reporte no encontrado" });
+        }
+        if (!canAccessReportRow(existing.rows[0], access)) {
+            return res.status(403).json({ message: 'No autorizado para modificar este reporte' });
+        }
+
         const query = `
             UPDATE reports 
             SET "baseTemplate" = $1, 

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,14 +13,23 @@
     <link rel="stylesheet" href="../style.css">
     <title>Selector De Plantillas</title>
 </head>
-<body>
+<body class="bg-light">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+        <div class="container-fluid d-flex flex-wrap align-items-center justify-content-between gap-2">
+            <span class="navbar-brand mb-0">Sistema de Documentación</span>
+            <button type="button" class="btn btn-outline-light btn-sm" data-bs-toggle="modal" data-bs-target="#backToMenuModal">
+                <i class="bi bi-house-door me-1"></i> Menú principal
+            </button>
+        </div>
+    </nav>
+
     <nav class="navbar navbar-light bg-white border-bottom mb-4">
-        <div class="container">
-            <span class="navbar-brand mb-0 text-secondary">Ministerio De Trabajo</span>
-            <form class="d-flex">
-                <input class="form-control me-2" type="search" placeholder="Buscar plantilla..." aria-label="Search">
-                <button class="btn btn-outline-secondary" type="submit">🔍</button>
-            </form>
+        <div class="container d-flex flex-wrap gap-2 justify-content-end">
+            <input id="template-name-search" class="form-control form-control-sm" style="max-width: 320px;"
+                type="search" placeholder="Buscar por nombre de plantilla" aria-label="Buscar por nombre">
+            <button id="template-search-clear" class="btn btn-outline-secondary btn-sm" type="button">
+                Limpiar
+            </button>
         </div>
     </nav>
 
@@ -29,6 +38,24 @@
     
     <div id="cards-container" class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
         </div>
+</div>
+
+<div class="modal fade" id="backToMenuModal" tabindex="-1" aria-labelledby="backToMenuModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="backToMenuModalLabel"><i class="bi bi-question-circle me-2"></i>Volver al menú principal</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                ¿Deseas salir del selector de plantillas y volver al menú principal?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="window.location.href='mainPage.html'">Sí, ir al menú</button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <div class="modal fade" id="previewModal" tabindex="-1" aria-labelledby="previewModalLabel" aria-hidden="true">

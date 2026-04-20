@@ -181,6 +181,142 @@ function handleFileMenu(option) {
         case "new":
             window.location.href = 'templateCreator.html';
             break;
+        case "copy":
+            copyFromActiveEditorSelection();
+            break;
+        case "paste":
+            pasteIntoActiveEditor();
+            break;
+    }
+}
+
+function notifyEditorMessage(kind, message) {
+    if (kind === "warning" && typeof notifyWarning === "function") {
+        notifyWarning(message);
+        return;
+    }
+    if (kind === "error" && typeof notifyError === "function") {
+        notifyError(message);
+        return;
+    }
+    if (kind === "success" && typeof notifySuccess === "function") {
+        notifySuccess(message);
+        return;
+    }
+    console[kind === "error" ? "error" : "log"](message);
+}
+
+function getActiveEditableEditor() {
+    const sel = window.getSelection();
+    if (sel && sel.rangeCount > 0 && sel.anchorNode) {
+        const anchorEl = sel.anchorNode.nodeType === Node.ELEMENT_NODE
+            ? sel.anchorNode
+            : sel.anchorNode.parentElement;
+        const editorFromSelection = anchorEl && anchorEl.closest
+            ? anchorEl.closest(".editor-section")
+            : null;
+        if (editorFromSelection && editorFromSelection.isContentEditable) {
+            return editorFromSelection;
+        }
+    }
+    if (activeEditor && activeEditor.isContentEditable) {
+        return activeEditor;
+    }
+    return null;
+}
+
+function fallbackCopyText(text) {
+    const temp = document.createElement("textarea");
+    temp.value = text;
+    temp.setAttribute("readonly", "");
+    temp.style.position = "fixed";
+    temp.style.opacity = "0";
+    document.body.appendChild(temp);
+    temp.select();
+    document.execCommand("copy");
+    document.body.removeChild(temp);
+}
+
+function insertPlainTextAtSelection(editor, text) {
+    editor.focus();
+    if (document.queryCommandSupported && document.queryCommandSupported("insertText")) {
+        const inserted = document.execCommand("insertText", false, text);
+        if (inserted) return;
+    }
+
+    const sel = window.getSelection();
+    if (!sel) return;
+    let range;
+    if (!sel.rangeCount || !editor.contains(sel.getRangeAt(0).commonAncestorContainer)) {
+        range = document.createRange();
+        range.selectNodeContents(editor);
+        range.collapse(false);
+    } else {
+        range = sel.getRangeAt(0);
+    }
+
+    range.deleteContents();
+    const parts = String(text).split(/\r?\n/);
+    const frag = document.createDocumentFragment();
+    parts.forEach((part, idx) => {
+        if (idx > 0) frag.appendChild(document.createElement("br"));
+        frag.appendChild(document.createTextNode(part));
+    });
+    range.insertNode(frag);
+    range.collapse(false);
+    sel.removeAllRanges();
+    sel.addRange(range);
+}
+
+async function copyFromActiveEditorSelection() {
+    const editor = getActiveEditableEditor();
+    if (!editor) {
+        notifyEditorMessage("warning", "Activa un editor para copiar.");
+        return;
+    }
+
+    const sel = window.getSelection();
+    const selectedText = sel ? sel.toString() : "";
+    if (!selectedText) {
+        notifyEditorMessage("warning", "Selecciona texto antes de copiar.");
+        return;
+    }
+
+    try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(selectedText);
+        } else {
+            fallbackCopyText(selectedText);
+        }
+    } catch (error) {
+        try {
+            fallbackCopyText(selectedText);
+        } catch {
+            console.error(error);
+            notifyEditorMessage("error", "No se pudo copiar el texto.");
+        }
+    }
+}
+
+async function pasteIntoActiveEditor() {
+    const editor = getActiveEditableEditor();
+    if (!editor) {
+        notifyEditorMessage("warning", "Activa un editor para pegar.");
+        return;
+    }
+
+    try {
+        let text = "";
+        if (navigator.clipboard && navigator.clipboard.readText) {
+            text = await navigator.clipboard.readText();
+        }
+        if (!text) return;
+        insertPlainTextAtSelection(editor, text);
+        saveState();
+        updatePreview();
+    } catch (error) {
+        console.error(error);
+        notifyEditorMessage("error", "No se pudo pegar desde el portapapeles.");
     }
 }
 
@@ -2131,6 +2267,29 @@ footerEditor.addEventListener('focus', () => {
 
 document.querySelectorAll(".editor-section").forEach(editor => {
     editor.addEventListener("input", updatePreview);
+});
+
+document.addEventListener("keydown", async (e) => {
+    const isCopy = (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "c";
+    const isPaste = (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "v";
+    if (!isCopy && !isPaste) return;
+
+    const target = e.target;
+    if (target instanceof HTMLElement) {
+        const isFormField = ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName);
+        const inEditor = Boolean(target.closest(".editor-section"));
+        if (isFormField && !inEditor) return;
+    }
+
+    const editor = getActiveEditableEditor();
+    if (!editor) return;
+
+    e.preventDefault();
+    if (isCopy) {
+        await copyFromActiveEditorSelection();
+    } else {
+        await pasteIntoActiveEditor();
+    }
 });
 
 document.addEventListener("DOMContentLoaded", function () {

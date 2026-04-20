@@ -9,11 +9,12 @@
 </head>
 <body class="bg-light">
 
-    <nav class="navbar navbar-dark bg-dark mb-4">
-        <div class="container">
-            <a class="navbar-brand" href="#">
-                <i class="bi bi-people-fill me-2"></i> Gestión de Usuarios
-            </a>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+        <div class="container-fluid d-flex flex-wrap align-items-center justify-content-between gap-2">
+            <a class="navbar-brand mb-0" href="#">Sistema de Documentación</a>
+            <button type="button" class="btn btn-outline-light btn-sm" data-bs-toggle="modal" data-bs-target="#backToMenuModal">
+                <i class="bi bi-house-door me-1"></i> Menú principal
+            </button>
         </div>
     </nav>
 
@@ -77,6 +78,24 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                     <button type="button" class="btn btn-primary" onclick="saveUser()">Guardar Usuario</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="backToMenuModal" tabindex="-1" aria-labelledby="backToMenuModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="backToMenuModalLabel"><i class="bi bi-question-circle me-2"></i>Volver al menú principal</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    ¿Deseas salir de la gestión de usuarios y volver al menú principal? Los cambios no guardados en el formulario modal se perderán al salir.
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="window.location.href='mainPage.html'">Sí, ir al menú</button>
                 </div>
             </div>
         </div>

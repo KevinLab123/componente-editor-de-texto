@@ -32,8 +32,11 @@
 <body class="bg-light">
 
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="#">Sistema de Documentación</a>
+    <div class="container-fluid d-flex flex-wrap align-items-center justify-content-between gap-2">
+        <a class="navbar-brand mb-0" href="#">Sistema de Documentación</a>
+        <button type="button" class="btn btn-outline-light btn-sm" data-bs-toggle="modal" data-bs-target="#backToMenuModal">
+            <i class="bi bi-house-door me-1"></i> Menú principal
+        </button>
     </div>
 </nav>
 
@@ -52,7 +55,24 @@
 
     <div class="card shadow-sm">
         <div class="card-header bg-white py-3">
-            <h5 class="card-title mb-0">Plantillas Existentes</h5>
+            <div class="d-flex flex-column gap-3">
+                <div class="d-flex flex-column flex-md-row gap-3 align-items-stretch align-items-md-center justify-content-between">
+                    <h5 class="card-title mb-0">Plantillas Existentes</h5>
+                    <div class="d-flex flex-wrap gap-2 align-items-center">
+                        <div class="input-group input-group-sm" style="min-width: 220px; max-width: 320px;">
+                            <span class="input-group-text bg-light border-end-0"><i class="bi bi-search"></i></span>
+                            <input type="search" id="template-search-input" class="form-control border-start-0" placeholder="Buscar por nombre o área…" autocomplete="off">
+                        </div>
+                        <select id="template-format-filter" class="form-select form-select-sm" style="width: auto; min-width: 170px;" title="Filtrar por formato de página">
+                            <option value="">Todos los formatos</option>
+                        </select>
+                        <button type="button" id="template-clear-filters" class="btn btn-outline-secondary btn-sm" title="Quitar búsqueda y filtro de formato">
+                            <i class="bi bi-arrow-counterclockwise me-1"></i>Limpiar
+                        </button>
+                    </div>
+                </div>
+                <p class="small text-muted mb-0" id="template-filter-hint">Escribe para filtrar por nombre o departamento; el desplegable limita por formato de página.</p>
+            </div>
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
@@ -76,6 +96,24 @@
                         </tr>
                     </tbody>
                 </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="backToMenuModal" tabindex="-1" aria-labelledby="backToMenuModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="backToMenuModalLabel"><i class="bi bi-question-circle me-2"></i>Volver al menú principal</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                ¿Deseas salir de esta página y volver al menú principal? Si no has guardado, los cambios sin guardar se perderán.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="window.location.href='mainPage.html'">Sí, ir al menú</button>
             </div>
         </div>
     </div>
